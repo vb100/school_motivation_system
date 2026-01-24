@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Mokinio skydelis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Mokinio skydelis</h1>
+    <a class="btn btn-outline-primary" href="{% url 'student_shop' %}">Bonusų parduotuvė</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Dabartiniai taškai</h5>
+                <p class="display-6">{{ balance }}</p>
+                {% if semester %}
+                    <p class="text-muted">Aktyvus semestras: {{ semester.name }}</p>
+                {% else %}
+                    <p class="text-danger">Aktyvus semestras nenustatytas.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Mano naujausia veikla</h5>
+                <ul class="list-group">
+                    {% for tx in recent_activity %}
+                        <li class="list-group-item">{{ tx.message }} ({{ tx.points_delta }} t.)</li>
+                    {% empty %}
+                        <li class="list-group-item">Nėra įrašų.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Naujausia mokyklos veikla</h5>
+        <ul class="list-group">
+            {% for tx in school_activity %}
+                <li class="list-group-item">
+                    <strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }} ({{ tx.points_delta }} t.)
+                </li>
+            {% empty %}
+                <li class="list-group-item">Nėra įrašų.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Mokytojo skydelis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Mokytojo skydelis</h1>
+    <a class="btn btn-outline-secondary" href="{% url 'teacher_ranking' %}">Top 5 reitingas</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Aktyvus semestras</h5>
+                {% if semester %}
+                    <p class="card-text">{{ semester.name }} ({{ semester.start_date }} – {{ semester.end_date }})</p>
+                {% else %}
+                    <p class="text-danger">Aktyvus semestras nenustatytas.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Biudžetas</h5>
+                {% if budget %}
+                    <p class="card-text">Likę taškai: <strong>{{ budget.remaining_points }}</strong></p>
+                    <p class="text-muted">Paskirta: {{ budget.allocated_points }}, Išleista: {{ budget.spent_points }}</p>
+                {% else %}
+                    <p class="text-danger">Biudžetas šiam semestrui dar nesukurtas.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Mokiniai</h5>
+        <form method="get" class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" name="q" placeholder="Paieška" value="{{ query }}">
+                <button class="btn btn-outline-primary" type="submit">Ieškoti</button>
+            </div>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Vardas</th>
+                        <th>Klasė</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                        <tr>
+                            <td>{{ student.display_name }}</td>
+                            <td>{{ student.class_name|default:"-" }}</td>
+                            <td><a class="btn btn-sm btn-primary" href="{% url 'teacher_award' student.id %}">Skirti taškus</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3">Mokinių nėra.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Top 5 mokiniai</h5>
+                <ol class="list-group list-group-numbered">
+                    {% for student in top_five %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ student.display_name }}
+                            <span class="badge bg-primary rounded-pill">{{ student.total_points }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Duomenų nėra.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Naujausia veikla</h5>
+                <ul class="list-group">
+                    {% for tx in recent_activity %}
+                        <li class="list-group-item">
+                            <strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }} ({{ tx.points_delta }} t.)
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Nėra įrašų.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Bonusų parduotuvė{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Bonusų parduotuvė</h1>
+    <a class="btn btn-outline-secondary" href="{% url 'student_dashboard' %}">Atgal</a>
+</div>
+
+<p class="lead">Jūsų taškai: <strong>{{ balance }}</strong></p>
+
+<div class="row">
+    {% for item in bonuses_info %}
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.bonus.title_lt }}</h5>
+                    <p class="card-text">{{ item.bonus.description_lt }}</p>
+                    <p class="card-text">Kaina: {{ item.bonus.price_points }} t.</p>
+                    <p class="card-text">Likę panaudojimai: {{ item.remaining_uses }}</p>
+                    <form method="post" action="{% url 'student_redeem' item.bonus.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary" type="submit" {% if not item.can_redeem %}disabled{% endif %}>
+                            Išpirkti bonusą
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <p>Nėra aktyvių bonusų.</p>
+    {% endfor %}
+</div>
+{% endblock %}
