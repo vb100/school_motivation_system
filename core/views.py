@@ -63,7 +63,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         students = students.filter(display_name__icontains=query)
     recent_activity = (
         PointTransaction.objects.filter(semester=semester)
-        .select_related("student_profile")
+        .select_related("student_profile", "created_by__teacher_profile")
         .order_by("-created_at")[:10]
     )
     top_five = top_students(semester)
@@ -134,9 +134,14 @@ def student_dashboard(request: HttpRequest) -> HttpResponse:
     balance = student_balance_points(student_profile, semester)
     recent_activity = (
         PointTransaction.objects.filter(semester=semester, student_profile=student_profile)
+        .select_related("created_by__teacher_profile")
         .order_by("-created_at")[:10]
     )
-    school_activity = PointTransaction.objects.filter(semester=semester).order_by("-created_at")[:10]
+    school_activity = (
+        PointTransaction.objects.filter(semester=semester)
+        .select_related("created_by__teacher_profile", "student_profile")
+        .order_by("-created_at")[:10]
+    )
 
     context = {
         "semester": semester,

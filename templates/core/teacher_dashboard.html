@@ -95,7 +95,11 @@
                 <ul class="list-group">
                     {% for tx in recent_activity %}
                         <li class="list-group-item">
-                            <strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }} ({{ tx.points_delta }} t.)
+                            <strong>{{ tx.student_profile.display_name }}</strong>:
+                            {{ tx.message }} ({{ tx.points_delta }} t.)
+                            {% if tx.created_by.teacher_profile %}
+                                <span class="text-muted">— Skyrė: {{ tx.created_by.teacher_profile.display_name }}</span>
+                            {% endif %}
                         </li>
                     {% empty %}
                         <li class="list-group-item">Nėra įrašų.</li>
