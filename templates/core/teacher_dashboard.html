@@ -5,12 +5,12 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3">Mokytojo skydelis</h1>
-    <a class="btn btn-outline-secondary" href="{% url 'teacher_ranking' %}">Top 5 reitingas</a>
+    <a class="btn btn-primary" href="{% url 'teacher_ranking' %}">Top 5 reitingas</a>
 </div>
 
 <div class="row mb-4">
     <div class="col-md-6">
-        <div class="card">
+        <div class="card shadow-sm border-0">
             <div class="card-body">
                 <h5 class="card-title">Aktyvus semestras</h5>
                 {% if semester %}
@@ -22,26 +22,35 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card">
+        <div class="card shadow-sm border-0">
             <div class="card-body">
                 <h5 class="card-title">Biudžetas</h5>
                 {% if budget %}
-                    <p class="card-text">Likę taškai: <strong>{{ budget.remaining_points }}</strong></p>
-                    <p class="text-muted">Paskirta: {{ budget.allocated_points }}, Išleista: {{ budget.spent_points }}</p>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <span class="display-6 fw-bold text-primary">{{ budget.remaining_points }}</span>
+                        <span class="badge bg-primary-subtle text-primary border">Likę taškai</span>
+                    </div>
+                    {% if budget.allocated_points %}
+                        <div class="progress mt-2" role="progressbar" aria-label="Biudžeto panaudojimas"
+                             aria-valuenow="{{ budget.spent_points }}" aria-valuemin="0" aria-valuemax="{{ budget.allocated_points }}">
+                            <div class="progress-bar" style="width: {% widthratio budget.spent_points budget.allocated_points 100 %}%"></div>
+                        </div>
+                    {% endif %}
+                    <p class="text-muted mt-2">Paskirta: {{ budget.allocated_points }}, Išleista: {{ budget.spent_points }}</p>
                 {% else %}
-                    <p class="text-danger">Biudžetas šiam semestrui dar nesukurtas.</p>
+                    <div class="alert alert-warning mb-0">Biudžetas šiam semestrui dar nesukurtas.</div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mb-4">
+<div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
         <h5 class="card-title">Mokiniai</h5>
         <form method="get" class="mb-3">
             <div class="input-group">
-                <input type="text" class="form-control" name="q" placeholder="Paieška" value="{{ query }}">
+                <input type="text" class="form-control" name="q" placeholder="Ieškoti pagal vardą ar klasę" value="{{ query }}">
                 <button class="btn btn-outline-primary" type="submit">Ieškoti</button>
             </div>
         </form>
@@ -59,7 +68,7 @@
                         <tr>
                             <td>{{ student.display_name }}</td>
                             <td>{{ student.class_name|default:"-" }}</td>
-                            <td><a class="btn btn-sm btn-primary" href="{% url 'teacher_award' student.id %}">Skirti taškus</a></td>
+                            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'teacher_award' student.id %}">Skirti taškus</a></td>
                         </tr>
                     {% empty %}
                         <tr><td colspan="3">Mokinių nėra.</td></tr>
@@ -72,7 +81,7 @@
 
 <div class="row">
     <div class="col-md-6">
-        <div class="card mb-4">
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
                 <h5 class="card-title">Top 5 mokiniai</h5>
                 <ol class="list-group list-group-numbered">
@@ -89,20 +98,24 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card mb-4">
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
                 <h5 class="card-title">Naujausia veikla</h5>
-                <ul class="list-group">
+                <ul class="list-group list-group-flush">
                     {% for tx in recent_activity %}
-                        <li class="list-group-item">
-                            <strong>{{ tx.student_profile.display_name }}</strong>:
-                            {{ tx.message }} ({{ tx.points_delta }} t.)
+                        <li class="list-group-item py-2">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
+                                <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ tx.points_delta }} t.
+                                </span>
+                            </div>
                             {% if tx.created_by.teacher_profile %}
-                                <span class="text-muted">— Skyrė: {{ tx.created_by.teacher_profile.display_name }}</span>
+                                <div class="small text-muted">Skyrė: {{ tx.created_by.teacher_profile.display_name }}</div>
                             {% endif %}
                         </li>
                     {% empty %}
-                        <li class="list-group-item">Nėra įrašų.</li>
+                        <li class="list-group-item py-2">Nėra įrašų.</li>
                     {% endfor %}
                 </ul>
             </div>
