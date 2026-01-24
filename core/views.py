@@ -25,7 +25,7 @@ class LoginView(auth_views.LoginView):
 def home(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         return redirect("login")
-    if request.user.role == User.Role.ADMIN:
+    if request.user.is_superuser or request.user.role == User.Role.ADMIN:
         return redirect("admin:index")
     if request.user.role == User.Role.TEACHER:
         return redirect("teacher_dashboard")
