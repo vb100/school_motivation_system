@@ -86,9 +86,9 @@ class PointTransaction(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=(
-                    (Q(tx_type=TxType.REDEEM) & Q(bonus_item__isnull=False) & Q(points_delta__lt=0))
-                    | (Q(tx_type=TxType.AWARD) & Q(bonus_item__isnull=True) & Q(points_delta__gt=0))
-                    | (Q(tx_type=TxType.ADMIN_ADJUST) & Q(bonus_item__isnull=True) & Q(points_delta__gt=0))
+                    (Q(tx_type="REDEEM") & Q(bonus_item__isnull=False) & Q(points_delta__lt=0))
+                    | (Q(tx_type="AWARD") & Q(bonus_item__isnull=True) & Q(points_delta__gt=0))
+                    | (Q(tx_type="ADMIN_ADJUST") & Q(bonus_item__isnull=True) & Q(points_delta__gt=0))
                 ),
                 name="pointtransaction_type_constraints",
             )
