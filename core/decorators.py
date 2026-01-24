@@ -12,6 +12,8 @@ def require_role(allowed_roles: Iterable[str]) -> Callable:
         def _wrapped_view(request: HttpRequest, *args, **kwargs) -> HttpResponse:
             if request.user.is_superuser:
                 return view_func(request, *args, **kwargs)
+            if not request.user.role:
+                return redirect("login")
             if request.user.role not in allowed_roles:
                 return redirect("home")
             return view_func(request, *args, **kwargs)

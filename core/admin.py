@@ -15,6 +15,7 @@ from .models import (
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
     fieldsets = DjangoUserAdmin.fieldsets + (("Rolė", {"fields": ("role",)}),)
+    add_fieldsets = DjangoUserAdmin.add_fieldsets + ((None, {"fields": ("role",)}),)
     list_display = ("username", "email", "role", "is_staff")
 
 

@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -24,6 +25,10 @@ class LoginView(auth_views.LoginView):
 
 def home(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
+        return redirect("login")
+    if not request.user.role and not request.user.is_superuser:
+        logout(request)
+        messages.error(request, "Vartotojui nepriskirta rolė. Susisiekite su administratoriumi.")
         return redirect("login")
     if request.user.is_superuser or request.user.role == User.Role.ADMIN:
         return redirect("admin:index")
