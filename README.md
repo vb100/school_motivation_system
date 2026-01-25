@@ -52,6 +52,7 @@ Prisijunkite prie **`/admin/`** ir sukurkite:
 - **Semester** su `is_active=True`.
 - **TeacherBudget** aktyviam semestrui.
 - **BonusItem** su LT pavadinimu ir aprašymu.
+- **SchoolSettings** įrašą mokyklos pavadinimui (naudojama skydelių antraštėje).
 
 ### 5) Paleidimas
 ```bash

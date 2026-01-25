@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from .models import (
     Semester,
+    SchoolSettings,
     StudentProfile,
     TeacherProfile,
     TeacherBudget,
@@ -21,6 +22,11 @@ from .models import (
 @dataclass
 class DomainError(Exception):
     message: str
+
+
+def get_school_name() -> str:
+    settings_row = SchoolSettings.objects.first()
+    return settings_row.name if settings_row else "Mokyklos pavadinimas"
 
 
 def get_active_semester() -> Semester:

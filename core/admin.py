@@ -5,6 +5,7 @@ from .models import (
     User,
     StudentProfile,
     TeacherProfile,
+    SchoolSettings,
     Semester,
     TeacherBudget,
     BonusItem,
@@ -41,6 +42,13 @@ class SemesterAdmin(admin.ModelAdmin):
 class TeacherBudgetAdmin(admin.ModelAdmin):
     list_display = ("teacher_profile", "semester", "allocated_points", "spent_points")
     list_filter = ("semester",)
+
+@admin.register(SchoolSettings)
+class SchoolSettingsAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+
+    def has_add_permission(self, request):
+        return not SchoolSettings.objects.exists()
 
 
 @admin.register(BonusItem)

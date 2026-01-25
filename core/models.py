@@ -39,6 +39,13 @@ class Semester(models.Model):
         return self.name
 
 
+class SchoolSettings(models.Model):
+    name = models.CharField(max_length=200, default="Mokyklos pavadinimas")
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class TeacherBudget(models.Model):
     teacher_profile = models.ForeignKey(TeacherProfile, on_delete=models.CASCADE)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)

@@ -12,6 +12,7 @@ from .services import (
     DomainError,
     award_points,
     get_active_semester,
+    get_school_name,
     redeem_bonus,
     student_balance_points,
     bonus_used_count,
@@ -53,6 +54,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
                 "recent_activity": [],
                 "top_five": [],
                 "query": "",
+                "school_name": get_school_name(),
             },
         )
     teacher_profile = request.user.teacher_profile
@@ -75,6 +77,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         "recent_activity": recent_activity,
         "top_five": top_five,
         "query": query or "",
+        "school_name": get_school_name(),
     }
     return render(request, "core/teacher_dashboard.html", context)
 
@@ -128,6 +131,7 @@ def student_dashboard(request: HttpRequest) -> HttpResponse:
                 "balance": 0,
                 "recent_activity": [],
                 "school_activity": [],
+                "school_name": get_school_name(),
             },
         )
     student_profile = request.user.student_profile
@@ -148,6 +152,7 @@ def student_dashboard(request: HttpRequest) -> HttpResponse:
         "balance": balance,
         "recent_activity": recent_activity,
         "school_activity": school_activity,
+        "school_name": get_school_name(),
     }
     return render(request, "core/student_dashboard.html", context)
 
