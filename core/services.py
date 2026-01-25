@@ -24,8 +24,12 @@ class DomainError(Exception):
     message: str
 
 
+def get_school_settings() -> SchoolSettings | None:
+    return SchoolSettings.objects.first()
+
+
 def get_school_name() -> str:
-    settings_row = SchoolSettings.objects.first()
+    settings_row = get_school_settings()
     return settings_row.name if settings_row else "Mokyklos pavadinimas"
 
 

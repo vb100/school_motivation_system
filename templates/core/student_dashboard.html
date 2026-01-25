@@ -4,9 +4,14 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <div class="text-uppercase small text-muted fw-semibold">{{ school_name }}</div>
-        <h1 class="h2 fw-semibold mb-0">Mokinio skydelis</h1>
+    <div class="d-flex align-items-center gap-3">
+        {% if school_logo_url %}
+            <img src="{{ school_logo_url }}" alt="Mokyklos logotipas" class="img-fluid" style="max-height: 48px;">
+        {% endif %}
+        <div>
+            <div class="text-uppercase small text-muted fw-semibold">{{ school_name }}</div>
+            <h1 class="h2 fw-semibold mb-0">Mokinio skydelis</h1>
+        </div>
     </div>
     <a class="btn btn-primary" href="{% url 'student_shop' %}">🎁 Bonusų parduotuvė</a>
 </div>

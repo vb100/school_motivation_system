@@ -13,6 +13,7 @@ from .services import (
     award_points,
     get_active_semester,
     get_school_name,
+    get_school_settings,
     redeem_bonus,
     student_balance_points,
     bonus_used_count,
@@ -40,6 +41,8 @@ def home(request: HttpRequest) -> HttpResponse:
 
 @require_role([User.Role.TEACHER])
 def teacher_dashboard(request: HttpRequest) -> HttpResponse:
+    school_settings = get_school_settings()
+    school_logo_url = school_settings.logo.url if school_settings and school_settings.logo else ""
     try:
         semester = get_active_semester()
     except DomainError as exc:
@@ -55,6 +58,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
                 "top_five": [],
                 "query": "",
                 "school_name": get_school_name(),
+                "school_logo_url": school_logo_url,
             },
         )
     teacher_profile = request.user.teacher_profile
@@ -78,6 +82,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         "top_five": top_five,
         "query": query or "",
         "school_name": get_school_name(),
+        "school_logo_url": school_logo_url,
     }
     return render(request, "core/teacher_dashboard.html", context)
 
@@ -119,6 +124,8 @@ def teacher_ranking(request: HttpRequest) -> HttpResponse:
 
 @require_role([User.Role.STUDENT])
 def student_dashboard(request: HttpRequest) -> HttpResponse:
+    school_settings = get_school_settings()
+    school_logo_url = school_settings.logo.url if school_settings and school_settings.logo else ""
     try:
         semester = get_active_semester()
     except DomainError as exc:
@@ -132,6 +139,7 @@ def student_dashboard(request: HttpRequest) -> HttpResponse:
                 "recent_activity": [],
                 "school_activity": [],
                 "school_name": get_school_name(),
+                "school_logo_url": school_logo_url,
             },
         )
     student_profile = request.user.student_profile
@@ -153,6 +161,7 @@ def student_dashboard(request: HttpRequest) -> HttpResponse:
         "recent_activity": recent_activity,
         "school_activity": school_activity,
         "school_name": get_school_name(),
+        "school_logo_url": school_logo_url,
     }
     return render(request, "core/student_dashboard.html", context)
 

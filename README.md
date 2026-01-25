@@ -53,6 +53,7 @@ Prisijunkite prie **`/admin/`** ir sukurkite:
 - **TeacherBudget** aktyviam semestrui.
 - **BonusItem** su LT pavadinimu ir aprašymu.
 - **SchoolSettings** įrašą mokyklos pavadinimui (naudojama skydelių antraštėje).
+- **SchoolSettings** logotipą (pasirinktinai, PNG/JPG) – rodomas skydelių antraštėje.
 
 ### 5) Paleidimas
 ```bash
@@ -122,7 +123,9 @@ export DB_PORT=5432
 python manage.py collectstatic
 ```
 
-4) Paleiskite su Gunicorn:
+4) Užtikrinkite, kad `MEDIA_ROOT` katalogas yra pasiekiamas (logotipų įkėlimams).
+
+5) Paleiskite su Gunicorn:
 ```bash
 gunicorn school_motivation_system.wsgi:application
 ```
