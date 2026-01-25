@@ -3,16 +3,16 @@
 {% block title %}Mokytojo skydelis{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3">Mokytojo skydelis</h1>
-    <a class="btn btn-primary" href="{% url 'teacher_ranking' %}">Top 5 reitingas</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 fw-semibold">Mokytojo skydelis</h1>
+    <a class="btn btn-primary" href="{% url 'teacher_ranking' %}">🏆 Top 5 reitingas</a>
 </div>
 
 <div class="row mb-4">
     <div class="col-md-6">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 bg-light-subtle">
             <div class="card-body">
-                <h5 class="card-title">Aktyvus semestras</h5>
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">📆 Aktyvus semestras</h5>
                 {% if semester %}
                     <p class="card-text">{{ semester.name }} ({{ semester.start_date }} – {{ semester.end_date }})</p>
                 {% else %}
@@ -22,9 +22,9 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 bg-light-subtle">
             <div class="card-body">
-                <h5 class="card-title">Biudžetas</h5>
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">💰 Biudžetas</h5>
                 {% if budget %}
                     <div class="d-flex align-items-baseline gap-2">
                         <span class="display-6 fw-bold text-primary">{{ budget.remaining_points }}</span>
@@ -45,9 +45,9 @@
     </div>
 </div>
 
-<div class="card shadow-sm border-0 mb-4">
+<div class="card shadow-sm border-0 mb-4 bg-light-subtle">
     <div class="card-body">
-        <h5 class="card-title">Mokiniai</h5>
+        <h5 class="card-title d-flex align-items-center gap-2 fs-5">👥 Mokiniai</h5>
         <form method="get" class="mb-3">
             <div class="input-group">
                 <input type="text" class="form-control" name="q" placeholder="Ieškoti pagal vardą ar klasę" value="{{ query }}">
@@ -81,12 +81,12 @@
 
 <div class="row">
     <div class="col-md-6">
-        <div class="card shadow-sm border-0 mb-4">
+        <div class="card shadow-sm border-0 mb-4 bg-light-subtle">
             <div class="card-body">
-                <h5 class="card-title">Top 5 mokiniai</h5>
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🏅 Top 5 mokiniai</h5>
                 <ol class="list-group list-group-numbered">
                     {% for student in top_five %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
                             {{ student.display_name }}
                             <span class="badge bg-primary rounded-pill">{{ student.total_points }}</span>
                         </li>
@@ -98,12 +98,12 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm border-0 mb-4">
+        <div class="card shadow-sm border-0 mb-4 bg-light-subtle">
             <div class="card-body">
-                <h5 class="card-title">Naujausia veikla</h5>
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🧾 Naujausia veikla</h5>
                 <ul class="list-group list-group-flush">
                     {% for tx in recent_activity %}
-                        <li class="list-group-item py-2">
+                        <li class="list-group-item py-2 bg-transparent">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
                                 <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">

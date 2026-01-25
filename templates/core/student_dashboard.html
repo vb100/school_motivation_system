@@ -3,16 +3,16 @@
 {% block title %}Mokinio skydelis{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3">Mokinio skydelis</h1>
-    <a class="btn btn-primary" href="{% url 'student_shop' %}">Bonusų parduotuvė</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 fw-semibold">Mokinio skydelis</h1>
+    <a class="btn btn-primary" href="{% url 'student_shop' %}">🎁 Bonusų parduotuvė</a>
 </div>
 
 <div class="row mb-4">
     <div class="col-md-6">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 bg-light-subtle">
             <div class="card-body">
-                <h5 class="card-title">Dabartiniai taškai</h5>
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">⭐ Dabartiniai taškai</h5>
                 <div class="d-flex align-items-baseline gap-2">
                     <span class="display-4 fw-bold text-primary">{{ balance }}</span>
                     <span class="badge bg-primary-subtle text-primary border">Taškai</span>
@@ -26,12 +26,12 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 bg-light-subtle">
             <div class="card-body">
-                <h5 class="card-title">Mano naujausia veikla</h5>
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🧾 Mano naujausia veikla</h5>
                 <ul class="list-group list-group-flush">
                     {% for tx in recent_activity %}
-                        <li class="list-group-item py-2">
+                        <li class="list-group-item py-2 bg-transparent">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <span>{{ tx.message }}</span>
                                 <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
@@ -51,12 +51,12 @@
     </div>
 </div>
 
-<div class="card shadow-sm border-0">
+<div class="card shadow-sm border-0 bg-light-subtle">
     <div class="card-body">
-        <h5 class="card-title">Naujausia mokyklos veikla</h5>
+        <h5 class="card-title d-flex align-items-center gap-2 fs-5">📣 Naujausia mokyklos veikla</h5>
         <ul class="list-group list-group-flush">
             {% for tx in school_activity %}
-                <li class="list-group-item py-2">
+                <li class="list-group-item py-2 bg-transparent">
                     <div class="d-flex justify-content-between align-items-start gap-2">
                         <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
                         <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
