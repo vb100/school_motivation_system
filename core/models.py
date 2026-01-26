@@ -47,6 +47,45 @@ class SchoolSettings(models.Model):
         return self.name
 
 
+class GroupPurchase(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "OPEN"
+        AWAITING_CONFIRMATION = "AWAITING_CONFIRMATION", "AWAITING_CONFIRMATION"
+        COMPLETED = "COMPLETED", "COMPLETED"
+
+    bonus_item = models.ForeignKey("BonusItem", on_delete=models.CASCADE)
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
+    status = models.CharField(max_length=30, choices=Status.choices, default=Status.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["bonus_item", "semester"],
+                condition=Q(status__in=["OPEN", "AWAITING_CONFIRMATION"]),
+                name="unique_active_group_purchase",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.bonus_item} ({self.semester})"
+
+
+class GroupContribution(models.Model):
+    group_purchase = models.ForeignKey(GroupPurchase, on_delete=models.CASCADE, related_name="contributions")
+    student_profile = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name="group_contributions")
+    amount = models.PositiveIntegerField()
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("group_purchase", "student_profile")
+
+    def __str__(self) -> str:
+        return f"{self.student_profile} {self.amount}"
+
+
 class TeacherBudget(models.Model):
     teacher_profile = models.ForeignKey(TeacherProfile, on_delete=models.CASCADE)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)

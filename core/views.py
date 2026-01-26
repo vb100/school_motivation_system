@@ -3,20 +3,25 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.http import HttpRequest, HttpResponse
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .decorators import require_role
 from .forms import AwardForm
-from .models import BonusItem, PointTransaction, StudentProfile, User
+from .models import BonusItem, GroupPurchase, GroupContribution, PointTransaction, StudentProfile, User
 from .services import (
     DomainError,
     award_points,
     get_active_semester,
     get_school_name,
     get_school_settings,
+    confirm_group_purchase,
+    reserve_group_points,
+    withdraw_group_reservation,
     redeem_bonus,
     student_balance_points,
     bonus_used_count,
+    student_reserved_points,
     top_students,
 )
 
@@ -175,17 +180,56 @@ def student_shop(request: HttpRequest) -> HttpResponse:
         return render(request, "core/student_shop.html", {"balance": 0, "bonuses_info": []})
     student_profile = request.user.student_profile
     balance = student_balance_points(student_profile, semester)
+    reserved = student_reserved_points(student_profile, semester)
     bonuses = BonusItem.objects.filter(is_active=True).order_by("price_points")
     bonuses_info = []
     for bonus in bonuses:
         used = bonus_used_count(student_profile, semester, bonus)
         remaining_uses = max(bonus.max_uses_per_student - used, 0)
+        group_purchase = GroupPurchase.objects.filter(
+            semester=semester,
+            bonus_item=bonus,
+            status__in=[GroupPurchase.Status.OPEN, GroupPurchase.Status.AWAITING_CONFIRMATION],
+        ).first()
+        if group_purchase:
+            total_reserved = (
+                GroupContribution.objects.filter(group_purchase=group_purchase)
+                .aggregate(total=Sum("amount"))
+                .get("total")
+                or 0
+            )
+            my_contribution = (
+                GroupContribution.objects.filter(group_purchase=group_purchase, student_profile=student_profile)
+                .first()
+            )
+            my_amount = my_contribution.amount if my_contribution else 0
+            my_confirmed = bool(my_contribution and my_contribution.confirmed_at)
+            can_withdraw = (
+                my_contribution is not None
+                and GroupContribution.objects.filter(group_purchase=group_purchase)
+                .exclude(student_profile=student_profile)
+                .count()
+                == 0
+                and group_purchase.status != GroupPurchase.Status.COMPLETED
+            )
+        else:
+            total_reserved = 0
+            my_amount = 0
+            my_confirmed = False
+            can_withdraw = False
+
         bonuses_info.append(
             {
                 "bonus": bonus,
                 "used": used,
                 "remaining_uses": remaining_uses,
-                "can_redeem": remaining_uses > 0 and balance >= bonus.price_points,
+                "can_redeem": remaining_uses > 0 and (balance - reserved) >= bonus.price_points,
+                "group_purchase": group_purchase,
+                "group_reserved_total": total_reserved,
+                "group_my_amount": my_amount,
+                "group_my_confirmed": my_confirmed,
+                "group_can_withdraw": can_withdraw,
+                "balance_available": balance - reserved,
             }
         )
 
@@ -203,6 +247,45 @@ def student_redeem(request: HttpRequest, bonus_id: int) -> HttpResponse:
         try:
             redeem_bonus(request.user, bonus)
             messages.success(request, "Bonusas sėkmingai išpirktas!")
+        except DomainError as exc:
+            messages.error(request, exc.message)
+    return redirect("student_shop")
+
+
+@require_role([User.Role.STUDENT])
+def student_reserve_points(request: HttpRequest, bonus_id: int) -> HttpResponse:
+    bonus = get_object_or_404(BonusItem, pk=bonus_id)
+    if request.method == "POST":
+        try:
+            amount = int(request.POST.get("reserve_amount", "0"))
+            reserve_group_points(request.user, bonus, amount)
+            messages.success(request, "Taškai sėkmingai rezervuoti!")
+        except (ValueError, TypeError):
+            messages.error(request, "Įveskite teisingą taškų kiekį.")
+        except DomainError as exc:
+            messages.error(request, exc.message)
+    return redirect("student_shop")
+
+
+@require_role([User.Role.STUDENT])
+def student_withdraw_reservation(request: HttpRequest, bonus_id: int) -> HttpResponse:
+    bonus = get_object_or_404(BonusItem, pk=bonus_id)
+    if request.method == "POST":
+        try:
+            withdraw_group_reservation(request.user, bonus)
+            messages.success(request, "Rezervacija atšaukta.")
+        except DomainError as exc:
+            messages.error(request, exc.message)
+    return redirect("student_shop")
+
+
+@require_role([User.Role.STUDENT])
+def student_confirm_group_purchase(request: HttpRequest, bonus_id: int) -> HttpResponse:
+    bonus = get_object_or_404(BonusItem, pk=bonus_id)
+    if request.method == "POST":
+        try:
+            confirm_group_purchase(request.user, bonus)
+            messages.success(request, "Pirkimas patvirtintas.")
         except DomainError as exc:
             messages.error(request, exc.message)
     return redirect("student_shop")

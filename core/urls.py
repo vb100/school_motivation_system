@@ -10,6 +10,9 @@ from .views import (
     student_dashboard,
     student_shop,
     student_redeem,
+    student_reserve_points,
+    student_withdraw_reservation,
+    student_confirm_group_purchase,
 )
 
 urlpatterns = [
@@ -22,4 +25,15 @@ urlpatterns = [
     path("student/", student_dashboard, name="student_dashboard"),
     path("student/shop/", student_shop, name="student_shop"),
     path("student/redeem/<int:bonus_id>/", student_redeem, name="student_redeem"),
+    path("student/reserve/<int:bonus_id>/", student_reserve_points, name="student_reserve_points"),
+    path(
+        "student/reserve/<int:bonus_id>/withdraw/",
+        student_withdraw_reservation,
+        name="student_withdraw_reservation",
+    ),
+    path(
+        "student/reserve/<int:bonus_id>/confirm/",
+        student_confirm_group_purchase,
+        name="student_confirm_group_purchase",
+    ),
 ]

@@ -5,6 +5,8 @@ from .models import (
     User,
     StudentProfile,
     TeacherProfile,
+    GroupPurchase,
+    GroupContribution,
     SchoolSettings,
     Semester,
     TeacherBudget,
@@ -42,6 +44,20 @@ class SemesterAdmin(admin.ModelAdmin):
 class TeacherBudgetAdmin(admin.ModelAdmin):
     list_display = ("teacher_profile", "semester", "allocated_points", "spent_points")
     list_filter = ("semester",)
+
+
+@admin.register(GroupPurchase)
+class GroupPurchaseAdmin(admin.ModelAdmin):
+    list_display = ("bonus_item", "semester", "status", "created_at")
+    list_filter = ("status", "semester")
+
+
+@admin.register(GroupContribution)
+class GroupContributionAdmin(admin.ModelAdmin):
+    list_display = ("group_purchase", "student_profile", "amount", "confirmed_at", "updated_at")
+    list_filter = ("group_purchase__semester",)
+    search_fields = ("student_profile__display_name",)
+
 
 @admin.register(SchoolSettings)
 class SchoolSettingsAdmin(admin.ModelAdmin):
