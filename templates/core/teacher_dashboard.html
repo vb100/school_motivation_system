@@ -114,7 +114,7 @@
                         <li class="list-group-item py-2 bg-transparent">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
-                                <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
+                                <span class="fw-semibold text-end flex-shrink-0 ps-3 {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}" style="min-width: 72px;">
                                     {{ tx.points_delta }} t.
                                 </span>
                             </div>
