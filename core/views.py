@@ -204,6 +204,7 @@ def student_shop(request: HttpRequest) -> HttpResponse:
             )
             my_amount = my_contribution.amount if my_contribution else 0
             my_confirmed = bool(my_contribution and my_contribution.confirmed_at)
+            remaining_to_fund = max(bonus.price_points - total_reserved, 0)
             can_withdraw = (
                 my_contribution is not None
                 and GroupContribution.objects.filter(group_purchase=group_purchase)
@@ -216,6 +217,7 @@ def student_shop(request: HttpRequest) -> HttpResponse:
             total_reserved = 0
             my_amount = 0
             my_confirmed = False
+            remaining_to_fund = bonus.price_points
             can_withdraw = False
 
         bonuses_info.append(
@@ -226,10 +228,10 @@ def student_shop(request: HttpRequest) -> HttpResponse:
                 "can_redeem": remaining_uses > 0 and (balance - reserved) >= bonus.price_points,
                 "group_purchase": group_purchase,
                 "group_reserved_total": total_reserved,
+                "group_remaining": remaining_to_fund,
                 "group_my_amount": my_amount,
                 "group_my_confirmed": my_confirmed,
                 "group_can_withdraw": can_withdraw,
-                "balance_available": balance - reserved,
             }
         )
 
