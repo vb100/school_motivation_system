@@ -18,7 +18,9 @@
                     <h5 class="card-title">{{ item.bonus.title_lt }}</h5>
                     <p class="card-text">{{ item.bonus.description_lt }}</p>
                     <p class="card-text">Kaina: {{ item.bonus.price_points }} t.</p>
-                    <p class="card-text">Liko mokėti: {{ item.group_remaining }} t.</p>
+                    {% if item.group_reserved_total %}
+                        <p class="card-text text-success fw-semibold">Liko mokėti: {{ item.group_remaining }} t.</p>
+                    {% endif %}
                     <p class="card-text">Likę panaudojimai: {{ item.remaining_uses }}</p>
                     <form method="post" action="{% url 'student_redeem' item.bonus.id %}">
                         {% csrf_token %}
