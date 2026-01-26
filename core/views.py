@@ -29,6 +29,12 @@ from .services import (
 class LoginView(auth_views.LoginView):
     template_name = "core/login.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        school_settings = get_school_settings()
+        context["school_logo_url"] = school_settings.logo.url if school_settings and school_settings.logo else ""
+        return context
+
 
 def home(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
