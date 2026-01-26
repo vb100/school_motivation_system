@@ -96,7 +96,12 @@
                     {% for student in top_five %}
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
                             {{ student.display_name }}
-                            <span class="badge bg-primary rounded-pill">{{ student.total_points }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary rounded-pill">{{ student.total_points }}</span>
+                                <span class="badge rounded-pill" style="background-color: #e9b6ff; color: #4b1b6b;">
+                                    {{ student.lifetime_points }}
+                                </span>
+                            </div>
                         </li>
                     {% empty %}
                         <li class="list-group-item">Duomenų nėra.</li>

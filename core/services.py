@@ -347,6 +347,7 @@ def top_students(semester: Semester, limit: int = 5) -> Iterable[StudentProfile]
                 Sum("point_transactions__points_delta", filter=Q(point_transactions__semester=semester)),
                 0,
             ),
+            lifetime_points=Coalesce(Sum("point_transactions__points_delta"), 0),
             last_tx_time=Coalesce(
                 Max("point_transactions__created_at", filter=Q(point_transactions__semester=semester)),
                 Value(future_date),
