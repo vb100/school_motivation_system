@@ -145,10 +145,20 @@ def student_dashboard(request: HttpRequest) -> HttpResponse:
                 "school_activity": [],
                 "school_name": get_school_name(),
                 "school_logo_url": school_logo_url,
+                "last_purchase": None,
             },
         )
     student_profile = request.user.student_profile
     balance = student_balance_points(student_profile, semester)
+    last_purchase = (
+        PointTransaction.objects.filter(
+            semester=semester,
+            student_profile=student_profile,
+            tx_type=PointTransaction.TxType.REDEEM,
+        )
+        .order_by("-created_at")
+        .first()
+    )
     recent_activity = (
         PointTransaction.objects.filter(semester=semester, student_profile=student_profile)
         .select_related("created_by__teacher_profile")
@@ -167,6 +177,7 @@ def student_dashboard(request: HttpRequest) -> HttpResponse:
         "school_activity": school_activity,
         "school_name": get_school_name(),
         "school_logo_url": school_logo_url,
+        "last_purchase": last_purchase,
     }
     return render(request, "core/student_dashboard.html", context)
 

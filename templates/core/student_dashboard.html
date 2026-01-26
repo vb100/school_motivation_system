@@ -27,6 +27,9 @@
                 </div>
                 {% if semester %}
                     <p class="text-muted">Aktyvus semestras: {{ semester.name }}</p>
+                    {% if last_purchase %}
+                        <p class="text-primary fw-semibold mb-0">Paskutinis pirkimas: {{ last_purchase.message }}</p>
+                    {% endif %}
                 {% else %}
                     <p class="text-danger">Aktyvus semestras nenustatytas.</p>
                 {% endif %}
@@ -41,7 +44,13 @@
                     {% for tx in recent_activity %}
                         <li class="list-group-item py-2 bg-transparent">
                             <div class="d-flex justify-content-between align-items-start gap-2">
-                                <span>{{ tx.message }}</span>
+                                <span>
+                                    {% if tx.tx_type == "REDEEM" %}
+                                        🎁 {{ tx.message }}
+                                    {% else %}
+                                        {{ tx.message }}
+                                    {% endif %}
+                                </span>
                                 <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
                                     {{ tx.points_delta }} t.
                                 </span>
