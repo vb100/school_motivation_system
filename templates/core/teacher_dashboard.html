@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Mokytojo skydelis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-3">
+        {% if school_logo_url %}
+            <img src="{{ school_logo_url }}" alt="Mokyklos logotipas" class="img-fluid" style="max-height: 48px;">
+        {% endif %}
+        <div>
+            <div class="text-uppercase small text-muted fw-semibold">{{ school_name }}</div>
+            <h1 class="h2 fw-semibold mb-0">Mokytojo skydelis</h1>
+        </div>
+    </div>
+    <a class="btn btn-primary" href="{% url 'teacher_ranking' %}">🏆 Top 5 reitingas</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-light-subtle">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">📆 Aktyvus semestras</h5>
+                {% if semester %}
+                    <p class="card-text">{{ semester.name }} ({{ semester.start_date }} – {{ semester.end_date }})</p>
+                {% else %}
+                    <p class="text-danger">Aktyvus semestras nenustatytas.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card shadow-sm border-0 bg-warning-subtle mt-3">
+            <div class="card-body">
+                <h5 class="card-title text-center mb-3">Skatiname už</h5>
+                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="bonus-prev">«</button>
+                    <div class="flex-grow-1 text-center">
+                        <div class="fw-semibold" id="bonus-title">Nėra bonusų</div>
+                        <div class="small text-muted">Kaina: <span id="bonus-price">0</span> t.</div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="bonus-next">»</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-light-subtle">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">💰 Biudžetas</h5>
+                {% if budget %}
+                    <div class="d-flex align-items-baseline gap-2">
+                        <span class="display-6 fw-bold text-primary">{{ budget.remaining_points }}</span>
+                        <span class="badge bg-primary-subtle text-primary border">Likę taškai</span>
+                    </div>
+                    {% if budget.allocated_points %}
+                        <div class="progress mt-2" role="progressbar" aria-label="Biudžeto panaudojimas"
+                             aria-valuenow="{{ budget.spent_points }}" aria-valuemin="0" aria-valuemax="{{ budget.allocated_points }}">
+                            <div class="progress-bar" style="width: {% widthratio budget.spent_points budget.allocated_points 100 %}%"></div>
+                        </div>
+                    {% endif %}
+                    <p class="text-muted mt-2">Paskirta: {{ budget.allocated_points }}, Išleista: {{ budget.spent_points }}</p>
+                {% else %}
+                    <div class="alert alert-warning mb-0">Biudžetas šiam semestrui dar nesukurtas.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ bonuses_payload|json_script:"bonus-items-data" }}
+<script>
+    (function () {
+        const dataElement = document.getElementById('bonus-items-data');
+        if (!dataElement) {
+            return;
+        }
+        const bonuses = JSON.parse(dataElement.textContent || '[]');
+        const titleEl = document.getElementById('bonus-title');
+        const priceEl = document.getElementById('bonus-price');
+        const prevBtn = document.getElementById('bonus-prev');
+        const nextBtn = document.getElementById('bonus-next');
+        if (!titleEl || !priceEl || !prevBtn || !nextBtn) {
+            return;
+        }
+        let index = 0;
+
+        const render = () => {
+            if (!bonuses.length) {
+                titleEl.textContent = 'Nėra bonusų';
+                priceEl.textContent = '0';
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+            const item = bonuses[index];
+            titleEl.textContent = item.title;
+            priceEl.textContent = item.price_points;
+            prevBtn.disabled = bonuses.length === 1;
+            nextBtn.disabled = bonuses.length === 1;
+        };
+
+        prevBtn.addEventListener('click', () => {
+            if (!bonuses.length) {
+                return;
+            }
+            index = (index - 1 + bonuses.length) % bonuses.length;
+            render();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (!bonuses.length) {
+                return;
+            }
+            index = (index + 1) % bonuses.length;
+            render();
+        });
+
+        render();
+    })();
+</script>
+
+<div class="card shadow-sm border-0 mb-4 bg-light-subtle">
+    <div class="card-body">
+        <h5 class="card-title d-flex align-items-center gap-2 fs-5">👥 Mokiniai</h5>
+        <form method="get" class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" name="q" placeholder="Ieškoti pagal vardą ar klasę" value="{{ query }}">
+                <button class="btn btn-outline-primary" type="submit">Ieškoti</button>
+            </div>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Vardas</th>
+                        <th>Klasė</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                        <tr>
+                            <td>{{ student.display_name }}</td>
+                            <td>{{ student.class_name|default:"-" }}</td>
+                            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'teacher_award' student.id %}">Skirti taškus</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3">Mokinių nėra.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 mb-4 bg-light-subtle">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🏅 Top 5 mokiniai</h5>
+                <ol class="list-group list-group-numbered">
+                    {% for student in top_five %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                            {{ student.display_name }}
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary rounded-pill">{{ student.total_points }}</span>
+                                <span class="badge rounded-pill" style="background-color: #e9b6ff; color: #4b1b6b;">
+                                    {{ student.lifetime_points }}
+                                </span>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Duomenų nėra.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 mb-4 bg-light-subtle">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🧾 Naujausia veikla</h5>
+                <ul class="list-group list-group-flush">
+                    {% for tx in recent_activity %}
+                        <li class="list-group-item py-2 bg-transparent">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
+                                <span class="fw-semibold text-end flex-shrink-0 ps-3 {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}" style="min-width: 72px;">
+                                    {{ tx.points_delta }} t.
+                                </span>
+                            </div>
+                            {% if tx.created_by.teacher_profile %}
+                                <div class="small text-muted">Skyrė: {{ tx.created_by.teacher_profile.display_name }}</div>
+                            {% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item py-2">Nėra įrašų.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

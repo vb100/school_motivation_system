@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Skirti taškus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h1 class="h4">Skirti taškus: {{ student.display_name }}</h1>
+        <form method="post" class="mt-3">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="mb-3">
+                {{ form.points.label_tag }}
+                {{ form.points }}
+                {{ form.points.errors }}
+                <div class="mt-2 d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-light border" id="points-minus">-100</button>
+                    <button type="button" class="btn btn-sm btn-light border" id="points-plus">+100</button>
+                    {% if remaining_budget is not None %}
+                        <span class="small text-muted">Likutis: {{ remaining_budget }} t.</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mb-3">
+                {{ form.message.label_tag }}
+                {{ form.message }}
+                {{ form.message.errors }}
+            </div>
+            <button class="btn btn-primary" type="submit">Skirti</button>
+            <a class="btn btn-outline-secondary" href="{% url 'teacher_dashboard' %}">Atgal</a>
+        </form>
+    </div>
+</div>
+<script>
+    (function () {
+        const pointsInput = document.querySelector('input[name="points"]');
+        const minusButton = document.getElementById('points-minus');
+        const plusButton = document.getElementById('points-plus');
+        if (!pointsInput || !minusButton || !plusButton) {
+            return;
+        }
+
+        const maxPoints = {{ remaining_budget|default:"null" }};
+        pointsInput.classList.add('text-center');
+        pointsInput.setAttribute('min', '1');
+
+        const updateButtons = () => {
+            const current = parseInt(pointsInput.value || '0', 10);
+            minusButton.disabled = current <= 1;
+            if (maxPoints === null) {
+                plusButton.disabled = false;
+            } else {
+                plusButton.disabled = current >= maxPoints;
+            }
+        };
+
+        const adjust = (delta) => {
+            const current = parseInt(pointsInput.value || '0', 10) || 0;
+            let next = current + delta;
+            if (next < 1) {
+                next = 1;
+            }
+            if (maxPoints !== null && next > maxPoints) {
+                next = maxPoints;
+            }
+            pointsInput.value = next;
+            updateButtons();
+        };
+
+        minusButton.addEventListener('click', () => adjust(-100));
+        plusButton.addEventListener('click', () => adjust(100));
+        pointsInput.addEventListener('input', updateButtons);
+        updateButtons();
+
+        minusButton.style.backgroundColor = '#ffe5e5';
+        minusButton.style.color = '#b02a37';
+        plusButton.style.backgroundColor = '#e8f7ec';
+        plusButton.style.color = '#198754';
+    })();
+</script>
+{% endblock %}
