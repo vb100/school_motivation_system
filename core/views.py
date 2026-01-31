@@ -8,7 +8,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .decorators import require_role
 from .forms import AwardForm
-from .models import BonusItem, GroupPurchase, GroupContribution, PointTransaction, StudentProfile, User
+from .models import (
+    BonusItem,
+    GroupPurchase,
+    GroupContribution,
+    PointTransaction,
+    StudentProfile,
+    TeacherBudget,
+    User,
+)
 from .services import (
     DomainError,
     award_points,
@@ -101,6 +109,14 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
 @require_role([User.Role.TEACHER])
 def teacher_award(request: HttpRequest, student_id: int) -> HttpResponse:
     student = get_object_or_404(StudentProfile, pk=student_id)
+    try:
+        semester = get_active_semester()
+        budget = (
+            TeacherBudget.objects.filter(teacher_profile=request.user.teacher_profile, semester=semester).first()
+        )
+        remaining_budget = budget.remaining_points if budget else None
+    except DomainError:
+        remaining_budget = None
     if request.method == "POST":
         form = AwardForm(request.POST)
         if form.is_valid():
@@ -118,7 +134,11 @@ def teacher_award(request: HttpRequest, student_id: int) -> HttpResponse:
     else:
         form = AwardForm()
 
-    return render(request, "core/teacher_award.html", {"student": student, "form": form})
+    return render(
+        request,
+        "core/teacher_award.html",
+        {"student": student, "form": form, "remaining_budget": remaining_budget},
+    )
 
 
 @require_role([User.Role.TEACHER])
