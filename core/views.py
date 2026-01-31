@@ -1,0 +1,330 @@
+from django.contrib import messages
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+from django.http import HttpRequest, HttpResponse
+from django.db.models import Sum
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .decorators import require_role
+from .forms import AwardForm
+from .models import (
+    BonusItem,
+    GroupPurchase,
+    GroupContribution,
+    PointTransaction,
+    StudentProfile,
+    TeacherBudget,
+    User,
+)
+from .services import (
+    DomainError,
+    award_points,
+    get_active_semester,
+    get_school_name,
+    get_school_settings,
+    confirm_group_purchase,
+    reserve_group_points,
+    withdraw_group_reservation,
+    redeem_bonus,
+    student_balance_points,
+    bonus_used_count,
+    student_reserved_points,
+    top_students,
+)
+
+
+class LoginView(auth_views.LoginView):
+    template_name = "core/login.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        school_settings = get_school_settings()
+        context["school_logo_url"] = school_settings.logo.url if school_settings and school_settings.logo else ""
+        return context
+
+
+def home(request: HttpRequest) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return redirect("login")
+    if not request.user.role and not request.user.is_superuser:
+        logout(request)
+        messages.error(request, "Vartotojui nepriskirta rolė. Susisiekite su administratoriumi.")
+        return redirect("login")
+    if request.user.is_superuser or request.user.role == User.Role.ADMIN:
+        return redirect("admin:index")
+    if request.user.role == User.Role.TEACHER:
+        return redirect("teacher_dashboard")
+    return redirect("student_dashboard")
+
+
+@require_role([User.Role.TEACHER])
+def teacher_dashboard(request: HttpRequest) -> HttpResponse:
+    school_settings = get_school_settings()
+    school_logo_url = school_settings.logo.url if school_settings and school_settings.logo else ""
+    try:
+        semester = get_active_semester()
+    except DomainError as exc:
+        messages.error(request, exc.message)
+        return render(
+            request,
+            "core/teacher_dashboard.html",
+            {
+                "semester": None,
+                "budget": None,
+                "students": StudentProfile.objects.none(),
+                "recent_activity": [],
+                "top_five": [],
+                "query": "",
+                "school_name": get_school_name(),
+                "school_logo_url": school_logo_url,
+            },
+        )
+    teacher_profile = request.user.teacher_profile
+    budget = teacher_profile.teacherbudget_set.filter(semester=semester).first()
+    students = StudentProfile.objects.all().order_by("display_name")
+    query = request.GET.get("q")
+    if query:
+        students = students.filter(display_name__icontains=query)
+    recent_activity = (
+        PointTransaction.objects.filter(semester=semester)
+        .select_related("student_profile", "created_by__teacher_profile")
+        .order_by("-created_at")[:10]
+    )
+    top_five = top_students(semester)
+
+    context = {
+        "semester": semester,
+        "budget": budget,
+        "students": students,
+        "recent_activity": recent_activity,
+        "top_five": top_five,
+        "query": query or "",
+        "school_name": get_school_name(),
+        "school_logo_url": school_logo_url,
+    }
+    return render(request, "core/teacher_dashboard.html", context)
+
+
+@require_role([User.Role.TEACHER])
+def teacher_award(request: HttpRequest, student_id: int) -> HttpResponse:
+    student = get_object_or_404(StudentProfile, pk=student_id)
+    try:
+        semester = get_active_semester()
+        budget = (
+            TeacherBudget.objects.filter(teacher_profile=request.user.teacher_profile, semester=semester).first()
+        )
+        remaining_budget = budget.remaining_points if budget else None
+    except DomainError:
+        remaining_budget = None
+    if request.method == "POST":
+        form = AwardForm(request.POST)
+        if form.is_valid():
+            try:
+                award_points(
+                    teacher_user=request.user,
+                    student=student,
+                    points=form.cleaned_data["points"],
+                    message=form.cleaned_data["message"],
+                )
+                messages.success(request, "Taškai sėkmingai skirti!")
+                return redirect("teacher_dashboard")
+            except DomainError as exc:
+                messages.error(request, exc.message)
+    else:
+        form = AwardForm()
+
+    return render(
+        request,
+        "core/teacher_award.html",
+        {"student": student, "form": form, "remaining_budget": remaining_budget},
+    )
+
+
+@require_role([User.Role.TEACHER])
+def teacher_ranking(request: HttpRequest) -> HttpResponse:
+    try:
+        semester = get_active_semester()
+        top_five = top_students(semester)
+    except DomainError as exc:
+        messages.error(request, exc.message)
+        semester = None
+        top_five = []
+    return render(request, "core/teacher_ranking.html", {"top_five": top_five, "semester": semester})
+
+
+@require_role([User.Role.STUDENT])
+def student_dashboard(request: HttpRequest) -> HttpResponse:
+    school_settings = get_school_settings()
+    school_logo_url = school_settings.logo.url if school_settings and school_settings.logo else ""
+    try:
+        semester = get_active_semester()
+    except DomainError as exc:
+        messages.error(request, exc.message)
+        return render(
+            request,
+            "core/student_dashboard.html",
+            {
+                "semester": None,
+                "balance": 0,
+                "recent_activity": [],
+                "school_activity": [],
+                "school_name": get_school_name(),
+                "school_logo_url": school_logo_url,
+                "last_purchase": None,
+            },
+        )
+    student_profile = request.user.student_profile
+    balance = student_balance_points(student_profile, semester)
+    last_purchase = (
+        PointTransaction.objects.filter(
+            semester=semester,
+            student_profile=student_profile,
+            tx_type=PointTransaction.TxType.REDEEM,
+        )
+        .order_by("-created_at")
+        .first()
+    )
+    recent_activity = (
+        PointTransaction.objects.filter(semester=semester, student_profile=student_profile)
+        .select_related("created_by__teacher_profile")
+        .order_by("-created_at")[:10]
+    )
+    school_activity = (
+        PointTransaction.objects.filter(semester=semester)
+        .select_related("created_by__teacher_profile", "student_profile")
+        .order_by("-created_at")[:10]
+    )
+
+    context = {
+        "semester": semester,
+        "balance": balance,
+        "recent_activity": recent_activity,
+        "school_activity": school_activity,
+        "school_name": get_school_name(),
+        "school_logo_url": school_logo_url,
+        "last_purchase": last_purchase,
+    }
+    return render(request, "core/student_dashboard.html", context)
+
+
+@require_role([User.Role.STUDENT])
+def student_shop(request: HttpRequest) -> HttpResponse:
+    try:
+        semester = get_active_semester()
+    except DomainError as exc:
+        messages.error(request, exc.message)
+        return render(request, "core/student_shop.html", {"balance": 0, "bonuses_info": []})
+    student_profile = request.user.student_profile
+    balance = student_balance_points(student_profile, semester)
+    reserved = student_reserved_points(student_profile, semester)
+    bonuses = BonusItem.objects.filter(is_active=True).order_by("price_points")
+    bonuses_info = []
+    for bonus in bonuses:
+        used = bonus_used_count(student_profile, semester, bonus)
+        remaining_uses = max(bonus.max_uses_per_student - used, 0)
+        group_purchase = GroupPurchase.objects.filter(
+            semester=semester,
+            bonus_item=bonus,
+            status__in=[GroupPurchase.Status.OPEN, GroupPurchase.Status.AWAITING_CONFIRMATION],
+        ).first()
+        if group_purchase:
+            total_reserved = (
+                GroupContribution.objects.filter(group_purchase=group_purchase)
+                .aggregate(total=Sum("amount"))
+                .get("total")
+                or 0
+            )
+            my_contribution = (
+                GroupContribution.objects.filter(group_purchase=group_purchase, student_profile=student_profile)
+                .first()
+            )
+            my_amount = my_contribution.amount if my_contribution else 0
+            my_confirmed = bool(my_contribution and my_contribution.confirmed_at)
+            remaining_to_fund = max(bonus.price_points - total_reserved, 0)
+            can_withdraw = (
+                my_contribution is not None
+                and GroupContribution.objects.filter(group_purchase=group_purchase)
+                .exclude(student_profile=student_profile)
+                .count()
+                == 0
+                and group_purchase.status != GroupPurchase.Status.COMPLETED
+            )
+        else:
+            total_reserved = 0
+            my_amount = 0
+            my_confirmed = False
+            remaining_to_fund = bonus.price_points
+            can_withdraw = False
+
+        bonuses_info.append(
+            {
+                "bonus": bonus,
+                "used": used,
+                "remaining_uses": remaining_uses,
+                "can_redeem": remaining_uses > 0 and (balance - reserved) >= bonus.price_points,
+                "group_purchase": group_purchase,
+                "group_reserved_total": total_reserved,
+                "group_remaining": remaining_to_fund,
+                "group_my_amount": my_amount,
+                "group_my_confirmed": my_confirmed,
+                "group_can_withdraw": can_withdraw,
+            }
+        )
+
+    context = {
+        "balance": balance,
+        "bonuses_info": bonuses_info,
+    }
+    return render(request, "core/student_shop.html", context)
+
+
+@require_role([User.Role.STUDENT])
+def student_redeem(request: HttpRequest, bonus_id: int) -> HttpResponse:
+    bonus = get_object_or_404(BonusItem, pk=bonus_id)
+    if request.method == "POST":
+        try:
+            redeem_bonus(request.user, bonus)
+            messages.success(request, "Bonusas sėkmingai išpirktas!")
+        except DomainError as exc:
+            messages.error(request, exc.message)
+    return redirect("student_shop")
+
+
+@require_role([User.Role.STUDENT])
+def student_reserve_points(request: HttpRequest, bonus_id: int) -> HttpResponse:
+    bonus = get_object_or_404(BonusItem, pk=bonus_id)
+    if request.method == "POST":
+        try:
+            amount = int(request.POST.get("reserve_amount", "0"))
+            reserve_group_points(request.user, bonus, amount)
+            messages.success(request, "Taškai sėkmingai rezervuoti!")
+        except (ValueError, TypeError):
+            messages.error(request, "Įveskite teisingą taškų kiekį.")
+        except DomainError as exc:
+            messages.error(request, exc.message)
+    return redirect("student_shop")
+
+
+@require_role([User.Role.STUDENT])
+def student_withdraw_reservation(request: HttpRequest, bonus_id: int) -> HttpResponse:
+    bonus = get_object_or_404(BonusItem, pk=bonus_id)
+    if request.method == "POST":
+        try:
+            withdraw_group_reservation(request.user, bonus)
+            messages.success(request, "Rezervacija atšaukta.")
+        except DomainError as exc:
+            messages.error(request, exc.message)
+    return redirect("student_shop")
+
+
+@require_role([User.Role.STUDENT])
+def student_confirm_group_purchase(request: HttpRequest, bonus_id: int) -> HttpResponse:
+    bonus = get_object_or_404(BonusItem, pk=bonus_id)
+    if request.method == "POST":
+        try:
+            confirm_group_purchase(request.user, bonus)
+            messages.success(request, "Pirkimas patvirtintas.")
+        except DomainError as exc:
+            messages.error(request, exc.message)
+    return redirect("student_shop")

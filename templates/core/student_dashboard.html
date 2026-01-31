@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Mokinio skydelis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-3">
+        {% if school_logo_url %}
+            <img src="{{ school_logo_url }}" alt="Mokyklos logotipas" class="img-fluid" style="max-height: 48px;">
+        {% endif %}
+        <div>
+            <div class="text-uppercase small text-muted fw-semibold">{{ school_name }}</div>
+            <h1 class="h2 fw-semibold mb-0">Mokinio skydelis</h1>
+        </div>
+    </div>
+    <a class="btn btn-primary" href="{% url 'student_shop' %}">🎁 Bonusų parduotuvė</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-light-subtle">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">⭐ Dabartiniai taškai</h5>
+                <div class="d-flex align-items-baseline gap-2">
+                    <span class="display-4 fw-bold text-primary">{{ balance }}</span>
+                    <span class="badge bg-primary-subtle text-primary border">Taškai</span>
+                </div>
+                {% if semester %}
+                    <p class="text-muted">Aktyvus semestras: {{ semester.name }}</p>
+                    {% if last_purchase %}
+                        <p class="text-primary fw-semibold mb-0">Paskutinis pirkimas: {{ last_purchase.message }}</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-danger">Aktyvus semestras nenustatytas.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-light-subtle">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🧾 Mano naujausia veikla</h5>
+                <ul class="list-group list-group-flush">
+                    {% for tx in recent_activity %}
+                        <li class="list-group-item py-2 bg-transparent">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <span>
+                                    {% if tx.tx_type == "REDEEM" %}
+                                        🎁 {{ tx.message }}
+                                    {% else %}
+                                        {{ tx.message }}
+                                    {% endif %}
+                                </span>
+                                <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ tx.points_delta }} t.
+                                </span>
+                            </div>
+                            {% if tx.created_by.teacher_profile %}
+                                <div class="small text-muted">Skyrė: {{ tx.created_by.teacher_profile.display_name }}</div>
+                            {% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item py-2">Nėra įrašų.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 bg-light-subtle">
+    <div class="card-body">
+        <h5 class="card-title d-flex align-items-center gap-2 fs-5">📣 Naujausia mokyklos veikla</h5>
+        <ul class="list-group list-group-flush">
+            {% for tx in school_activity %}
+                <li class="list-group-item py-2 bg-transparent">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
+                        <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ tx.points_delta }} t.
+                        </span>
+                    </div>
+                    {% if tx.created_by.teacher_profile %}
+                        <div class="small text-muted">Skyrė: {{ tx.created_by.teacher_profile.display_name }}</div>
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li class="list-group-item py-2">Nėra įrašų.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
