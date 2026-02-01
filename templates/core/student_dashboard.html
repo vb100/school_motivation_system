@@ -17,8 +17,8 @@
 </div>
 
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0 bg-light-subtle">
+    <div class="col-md-6 d-flex">
+        <div class="card shadow-sm border-0 bg-light-subtle h-100 w-100">
             <div class="card-body">
                 <h5 class="card-title d-flex align-items-center gap-2 fs-5">⭐ Dabartiniai taškai</h5>
                 <div class="d-flex align-items-baseline gap-2">
@@ -36,8 +36,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0 bg-light-subtle">
+    <div class="col-md-6 d-flex">
+        <div class="card shadow-sm border-0 bg-light-subtle h-100 w-100">
             <div class="card-body">
                 <h5 class="card-title d-flex align-items-center gap-2 fs-5">🧾 Mano naujausia veikla</h5>
                 <ul class="list-group list-group-flush">
@@ -51,7 +51,7 @@
                                         {{ tx.message }}
                                     {% endif %}
                                 </span>
-                                <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
+                                <span class="fw-semibold text-end flex-shrink-0 ps-3 {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}" style="min-width: 72px;">
                                     {{ tx.points_delta }} t.
                                 </span>
                             </div>
