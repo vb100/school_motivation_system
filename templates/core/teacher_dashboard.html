@@ -17,7 +17,7 @@
 </div>
 
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-6 d-flex flex-column">
         <div class="card shadow-sm border-0 bg-light-subtle">
             <div class="card-body">
                 <h5 class="card-title d-flex align-items-center gap-2 fs-5">📆 Aktyvus semestras</h5>
@@ -28,9 +28,9 @@
                 {% endif %}
             </div>
         </div>
-        <div class="card shadow-sm border-0 bg-warning-subtle mt-3">
+        <div class="card shadow-sm border-0 bg-body-secondary mt-3 flex-grow-1">
             <div class="card-body">
-                <h5 class="card-title text-center mb-3">Skatiname už</h5>
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🎯 Skatiname už</h5>
                 <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                     <button class="btn btn-outline-secondary btn-sm" type="button" id="bonus-prev">«</button>
                     <div class="flex-grow-1 text-center">
@@ -43,7 +43,7 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm border-0 bg-light-subtle">
+        <div class="card shadow-sm border-0 bg-light-subtle h-100">
             <div class="card-body">
                 <h5 class="card-title d-flex align-items-center gap-2 fs-5">💰 Biudžetas</h5>
                 {% if budget %}
