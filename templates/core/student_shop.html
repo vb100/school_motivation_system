@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Bonusų parduotuvė{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Bonusų parduotuvė</h1>
+    <a class="btn btn-outline-secondary" href="{% url 'student_dashboard' %}">Atgal</a>
+</div>
+
+<p class="lead">Jūsų taškai: <strong>{{ balance }}</strong></p>
+
+<div class="row">
+    {% for item in bonuses_info %}
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.bonus.title_lt }}</h5>
+                    <p class="card-text">{{ item.bonus.description_lt }}</p>
+                    <p class="card-text">Kaina: {{ item.bonus.price_points }} t.</p>
+                    {% if item.group_reserved_total %}
+                        <p class="card-text text-success fw-semibold">Liko mokėti: {{ item.group_remaining }} t.</p>
+                    {% endif %}
+                    <p class="card-text">Likę panaudojimai: {{ item.remaining_uses }}</p>
+                    <form method="post" action="{% url 'student_redeem' item.bonus.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary" type="submit" {% if not item.can_redeem %}disabled{% endif %}>
+                            Išpirkti bonusą
+                        </button>
+                    </form>
+                    <hr>
+                    <div class="mb-2">
+                        <strong>Grupinis pirkimas</strong>
+                    </div>
+                    <div class="small text-muted mb-2">
+                        Rezervuota iš viso: {{ item.group_reserved_total }} t.
+                        {% if item.group_my_amount %}
+                            (Jūs: {{ item.group_my_amount }} t.)
+                        {% endif %}
+                    </div>
+                    {% if item.group_purchase and item.group_purchase.status == "AWAITING_CONFIRMATION" %}
+                        <div class="alert alert-warning py-2 mb-2">
+                            Reikalingas visų dalyvių patvirtinimas.
+                        </div>
+                        {% if item.group_my_amount and not item.group_my_confirmed %}
+                            <form method="post" action="{% url 'student_confirm_group_purchase' item.bonus.id %}">
+                                {% csrf_token %}
+                                <button class="btn btn-outline-primary btn-sm" type="submit">Patvirtinti pirkimą</button>
+                            </form>
+                        {% elif item.group_my_confirmed %}
+                            <div class="small text-success">Jūs jau patvirtinote.</div>
+                        {% endif %}
+                    {% else %}
+                        <form method="post" action="{% url 'student_reserve_points' item.bonus.id %}" class="row g-2 align-items-center">
+                            {% csrf_token %}
+                            <div class="col-auto">
+                                <input type="number" min="1" name="reserve_amount" class="form-control form-control-sm" placeholder="Taškai">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-outline-primary btn-sm" type="submit">Rezervuoti taškus</button>
+                            </div>
+                        </form>
+                        {% if item.group_can_withdraw %}
+                            <form method="post" action="{% url 'student_withdraw_reservation' item.bonus.id %}" class="mt-2">
+                                {% csrf_token %}
+                                <button class="btn btn-outline-danger btn-sm" type="submit">Atšaukti rezervaciją</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <p>Nėra aktyvių bonusų.</p>
+    {% endfor %}
+</div>
+{% endblock %}
