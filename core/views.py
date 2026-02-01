@@ -92,6 +92,8 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         .order_by("-created_at")[:10]
     )
     top_five = top_students(semester)
+    bonuses = list(BonusItem.objects.filter(is_active=True).order_by("price_points"))
+    bonuses_payload = [{"title": bonus.title_lt, "price_points": bonus.price_points} for bonus in bonuses]
 
     context = {
         "semester": semester,
@@ -102,6 +104,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         "query": query or "",
         "school_name": get_school_name(),
         "school_logo_url": school_logo_url,
+        "bonuses_payload": bonuses_payload,
     }
     return render(request, "core/teacher_dashboard.html", context)
 

@@ -17,7 +17,7 @@
 </div>
 
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-6 d-flex flex-column">
         <div class="card shadow-sm border-0 bg-light-subtle">
             <div class="card-body">
                 <h5 class="card-title d-flex align-items-center gap-2 fs-5">📆 Aktyvus semestras</h5>
@@ -28,9 +28,22 @@
                 {% endif %}
             </div>
         </div>
+        <div class="card shadow-sm border-0 bg-body-secondary mt-3 flex-grow-1">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center gap-2 fs-5">🎯 Skatiname už:</h5>
+                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="bonus-prev">«</button>
+                    <div class="flex-grow-1 text-center">
+                        <div class="fw-semibold" id="bonus-title">Nėra bonusų</div>
+                        <div class="small text-muted">Vertė: <span id="bonus-price">0</span> t.</div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="bonus-next">»</button>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm border-0 bg-light-subtle">
+        <div class="card shadow-sm border-0 bg-light-subtle h-100">
             <div class="card-body">
                 <h5 class="card-title d-flex align-items-center gap-2 fs-5">💰 Biudžetas</h5>
                 {% if budget %}
@@ -52,6 +65,58 @@
         </div>
     </div>
 </div>
+
+{{ bonuses_payload|json_script:"bonus-items-data" }}
+<script>
+    (function () {
+        const dataElement = document.getElementById('bonus-items-data');
+        if (!dataElement) {
+            return;
+        }
+        const bonuses = JSON.parse(dataElement.textContent || '[]');
+        const titleEl = document.getElementById('bonus-title');
+        const priceEl = document.getElementById('bonus-price');
+        const prevBtn = document.getElementById('bonus-prev');
+        const nextBtn = document.getElementById('bonus-next');
+        if (!titleEl || !priceEl || !prevBtn || !nextBtn) {
+            return;
+        }
+        let index = 0;
+
+        const render = () => {
+            if (!bonuses.length) {
+                titleEl.textContent = 'Nėra bonusų';
+                priceEl.textContent = '0';
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+            const item = bonuses[index];
+            titleEl.textContent = item.title;
+            priceEl.textContent = item.price_points;
+            prevBtn.disabled = bonuses.length === 1;
+            nextBtn.disabled = bonuses.length === 1;
+        };
+
+        prevBtn.addEventListener('click', () => {
+            if (!bonuses.length) {
+                return;
+            }
+            index = (index - 1 + bonuses.length) % bonuses.length;
+            render();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (!bonuses.length) {
+                return;
+            }
+            index = (index + 1) % bonuses.length;
+            render();
+        });
+
+        render();
+    })();
+</script>
 
 <div class="card shadow-sm border-0 mb-4 bg-light-subtle">
     <div class="card-body">
