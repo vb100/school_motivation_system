@@ -376,7 +376,7 @@ def teacher_confirm_bonus_request(request: HttpRequest, request_id: int) -> Http
     if request.method == "POST":
         try:
             confirm_bonus_redemption_request(request.user, bonus_request)
-            messages.success(request, "Prašymas patvirtintas, bonusas išpirktas.")
+            messages.success(request, "Prašymas patvirtintas, Pointify.lt pasiūlymas įsigytas.")
         except DomainError as exc:
             messages.error(request, exc.message)
     return redirect("teacher_dashboard")
