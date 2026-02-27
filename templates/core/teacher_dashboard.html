@@ -227,15 +227,18 @@
         <div class="card shadow-sm border-0 mb-4 bg-light-subtle">
             <div class="card-body">
                 <h5 class="card-title d-flex align-items-center gap-2 fs-5">🏅 Top 5 mokiniai</h5>
-                <ol class="list-group list-group-numbered">
+                <ol class="list-group">
                     {% for student in top_five %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
-                        {{ student.display_name }}
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary rounded-pill">{{ student.total_points }}</span>
-                            <span class="badge rounded-pill" style="background-color: #e9b6ff; color: #4b1b6b;">
-                                {{ student.lifetime_points }}
-                            </span>
+                    <li class="list-group-item bg-transparent">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-semibold flex-shrink-0" style="width: 2.5rem;">{{ forloop.counter }}.</span>
+                            <span class="flex-grow-1 text-start">{{ student.display_name }}</span>
+                            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                <span class="badge bg-primary rounded-pill">{{ student.total_points }}</span>
+                                <span class="badge rounded-pill" style="background-color: #e9b6ff; color: #4b1b6b;">
+                                    {{ student.lifetime_points }}
+                                </span>
+                            </div>
                         </div>
                     </li>
                     {% empty %}
