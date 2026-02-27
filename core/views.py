@@ -89,6 +89,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
                 "semester": None,
                 "budget": None,
                 "students": StudentProfile.objects.none(),
+                "students_truncated": False,
                 "recent_activity": [],
                 "recent_activity_truncated": False,
                 "pending_bonus_requests": [],
@@ -103,11 +104,21 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         )
     teacher_profile = request.user.teacher_profile
     budget = teacher_profile.teacherbudget_set.filter(semester=semester).first()
-    students = StudentProfile.objects.all().order_by("display_name")
-    if query:
-        students = students.filter(display_name__icontains=query)
-    if selected_class:
-        students = students.filter(class_name__iexact=selected_class)
+    students_base = StudentProfile.objects.all()
+    students_truncated = False
+    if query or selected_class:
+        students = students_base.order_by("display_name")
+        if query:
+            students = students.filter(display_name__icontains=query)
+        if selected_class:
+            students = students.filter(class_name__iexact=selected_class)
+    else:
+        total_students = students_base.count()
+        if total_students > 15:
+            students = students_base.order_by("-id")[:15]
+            students_truncated = True
+        else:
+            students = students_base.order_by("display_name")
     total_recent_activity = PointTransaction.objects.filter(semester=semester).count()
     recent_activity = (
         PointTransaction.objects.filter(semester=semester)
@@ -130,6 +141,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         "semester": semester,
         "budget": budget,
         "students": students,
+        "students_truncated": students_truncated,
         "recent_activity": recent_activity,
         "recent_activity_truncated": total_recent_activity > 10,
         "pending_bonus_requests": pending_bonus_requests,
