@@ -90,6 +90,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
                 "budget": None,
                 "students": StudentProfile.objects.none(),
                 "recent_activity": [],
+                "recent_activity_truncated": False,
                 "pending_bonus_requests": [],
                 "top_five": [],
                 "query": query,
@@ -107,6 +108,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         students = students.filter(display_name__icontains=query)
     if selected_class:
         students = students.filter(class_name__iexact=selected_class)
+    total_recent_activity = PointTransaction.objects.filter(semester=semester).count()
     recent_activity = (
         PointTransaction.objects.filter(semester=semester)
         .select_related("student_profile", "created_by__teacher_profile")
@@ -129,6 +131,7 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         "budget": budget,
         "students": students,
         "recent_activity": recent_activity,
+        "recent_activity_truncated": total_recent_activity > 10,
         "pending_bonus_requests": pending_bonus_requests,
         "top_five": top_five,
         "query": query,
