@@ -11,6 +11,7 @@ from .models import (
     Semester,
     TeacherBudget,
     BonusItem,
+    BonusRedemptionRequest,
     PointTransaction,
 )
 
@@ -69,8 +70,27 @@ class SchoolSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(BonusItem)
 class BonusItemAdmin(admin.ModelAdmin):
-    list_display = ("title_lt", "price_points", "max_uses_per_student", "is_active")
-    list_filter = ("is_active",)
+    list_display = ("title_lt", "category", "price_points", "max_uses_per_student", "is_active")
+    list_filter = ("category", "is_active")
+    filter_horizontal = ("assigned_teachers",)
+
+
+@admin.register(BonusRedemptionRequest)
+class BonusRedemptionRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "bonus_item",
+        "student_profile",
+        "requested_teacher",
+        "status",
+        "created_at",
+        "decided_at",
+    )
+    list_filter = ("status", "semester")
+    search_fields = (
+        "bonus_item__title_lt",
+        "student_profile__display_name",
+        "requested_teacher__display_name",
+    )
 
 
 @admin.register(PointTransaction)

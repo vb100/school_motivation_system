@@ -13,7 +13,7 @@
             <h1 class="h2 fw-semibold mb-0">Mokinio skydelis</h1>
         </div>
     </div>
-    <a class="btn btn-primary" href="{% url 'student_shop' %}">🎁 Bonusų parduotuvė</a>
+    <a class="btn btn-primary" href="{% url 'student_shop' %}">🎁 Pointify.lt parduotuvė</a>
 </div>
 
 <div class="row mb-4">
@@ -74,14 +74,22 @@
         <ul class="list-group list-group-flush">
             {% for tx in school_activity %}
                 <li class="list-group-item py-2 bg-transparent">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
-                        <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
-                            {{ tx.points_delta }} t.
-                        </span>
-                    </div>
-                    {% if tx.created_by.teacher_profile %}
-                        <div class="small text-muted">Skyrė: {{ tx.created_by.teacher_profile.display_name }}</div>
+                    {% if tx.student_profile_id == current_student_id %}
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <span><strong>{{ tx.student_profile.display_name }}</strong>: {{ tx.message }}</span>
+                            <span class="fw-semibold {% if tx.points_delta < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ tx.points_delta }} t.
+                            </span>
+                        </div>
+                        {% if tx.created_by.teacher_profile %}
+                            <div class="small text-muted">Skyrė: {{ tx.created_by.teacher_profile.display_name }}</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <span class="text-muted"><span aria-hidden="true">🔒</span> Kito mokinio veikla</span>
+                            <span class="fw-semibold text-muted">—</span>
+                        </div>
+                        <div class="small text-muted">Duomenys paslėpti dėl privatumo.</div>
                     {% endif %}
                 </li>
             {% empty %}

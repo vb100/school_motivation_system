@@ -8,6 +8,7 @@ from core.models import (
     Semester,
     TeacherBudget,
     BonusItem,
+    BonusRedemptionRequest,
     PointTransaction,
     GroupPurchase,
     GroupContribution,
@@ -21,6 +22,8 @@ from core.services import (
     reserve_group_points,
     confirm_group_purchase,
     withdraw_group_reservation,
+    create_bonus_redemption_request,
+    confirm_bonus_redemption_request,
     DomainError,
 )
 
@@ -34,9 +37,11 @@ class ServicesTests(TestCase):
             is_active=True,
         )
         self.teacher_user = User.objects.create_user(username="teacher", password="pass", role=User.Role.TEACHER)
+        self.teacher_user_two = User.objects.create_user(username="teacher2", password="pass", role=User.Role.TEACHER)
         self.student_user = User.objects.create_user(username="student", password="pass", role=User.Role.STUDENT)
         self.admin_user = User.objects.create_user(username="admin", password="pass", role=User.Role.ADMIN)
         self.teacher_profile = TeacherProfile.objects.create(user=self.teacher_user, display_name="Mokytojas")
+        self.teacher_profile_two = TeacherProfile.objects.create(user=self.teacher_user_two, display_name="Mokytojas 2")
         self.student_profile = StudentProfile.objects.create(user=self.student_user, display_name="Mokinys")
         self.student_user_two = User.objects.create_user(username="student2", password="pass", role=User.Role.STUDENT)
         self.student_profile_two = StudentProfile.objects.create(user=self.student_user_two, display_name="Mokinys 2")
@@ -53,6 +58,15 @@ class ServicesTests(TestCase):
             max_uses_per_student=1,
             is_active=True,
         )
+        self.points_related_bonus = BonusItem.objects.create(
+            title_lt="Papildomas balas",
+            description_lt="Patvirtina mokytojas",
+            price_points=40,
+            max_uses_per_student=1,
+            is_active=True,
+            category=BonusItem.Category.POINTS_RELATED,
+        )
+        self.points_related_bonus.assigned_teachers.add(self.teacher_profile)
 
     def test_award_points_decreases_budget(self) -> None:
         tx = award_points(self.teacher_user, self.student_profile, 20, "Puikiai!")
@@ -116,3 +130,40 @@ class ServicesTests(TestCase):
         reserve_group_points(self.student_user_two, self.bonus, 10)
         with self.assertRaises(DomainError):
             withdraw_group_reservation(self.student_user, self.bonus)
+
+    def test_points_related_bonus_requires_teacher_confirmation(self) -> None:
+        award_points(self.teacher_user, self.student_profile, 80, "Taškai")
+        request = create_bonus_redemption_request(
+            self.student_user,
+            self.points_related_bonus,
+            self.teacher_profile.id,
+        )
+        self.assertEqual(request.status, BonusRedemptionRequest.Status.PENDING)
+        self.assertEqual(
+            PointTransaction.objects.filter(
+                bonus_item=self.points_related_bonus,
+                tx_type=PointTransaction.TxType.REDEEM,
+            ).count(),
+            0,
+        )
+
+        with self.assertRaises(DomainError):
+            confirm_bonus_redemption_request(self.teacher_user_two, request)
+
+        tx = confirm_bonus_redemption_request(self.teacher_user, request)
+        request.refresh_from_db()
+        self.assertEqual(request.status, BonusRedemptionRequest.Status.APPROVED)
+        self.assertEqual(tx.points_delta, -40)
+
+    def test_points_related_bonus_disables_group_purchase(self) -> None:
+        with self.assertRaises(DomainError):
+            reserve_group_points(self.student_user, self.points_related_bonus, 10)
+
+    def test_points_related_bonus_requires_assigned_teacher(self) -> None:
+        award_points(self.teacher_user, self.student_profile, 80, "Taškai")
+        with self.assertRaises(DomainError):
+            create_bonus_redemption_request(
+                self.student_user,
+                self.points_related_bonus,
+                self.teacher_profile_two.id,
+            )

@@ -14,6 +14,7 @@ from .models import (
     TeacherProfile,
     TeacherBudget,
     BonusItem,
+    BonusRedemptionRequest,
     GroupPurchase,
     GroupContribution,
     PointTransaction,
@@ -96,6 +97,8 @@ def reserve_group_points(student_user: User, bonus: BonusItem, amount: int) -> G
         raise DomainError("Rezervuojamų taškų kiekis turi būti teigiamas.")
     if not bonus.is_active:
         raise DomainError("Bonusas neaktyvus.")
+    if bonus.category == BonusItem.Category.POINTS_RELATED:
+        raise DomainError("Šiam bonusui grupinis pirkimas negalimas.")
 
     semester = get_active_semester()
 
@@ -163,6 +166,8 @@ def reserve_group_points(student_user: User, bonus: BonusItem, amount: int) -> G
 def withdraw_group_reservation(student_user: User, bonus: BonusItem) -> None:
     if student_user.role != User.Role.STUDENT:
         raise DomainError("Neturite teisės atšaukti rezervacijos.")
+    if bonus.category == BonusItem.Category.POINTS_RELATED:
+        raise DomainError("Šiam bonusui grupinis pirkimas negalimas.")
 
     semester = get_active_semester()
     try:
@@ -197,6 +202,8 @@ def withdraw_group_reservation(student_user: User, bonus: BonusItem) -> None:
 def confirm_group_purchase(student_user: User, bonus: BonusItem) -> None:
     if student_user.role != User.Role.STUDENT:
         raise DomainError("Neturite teisės patvirtinti pirkimo.")
+    if bonus.category == BonusItem.Category.POINTS_RELATED:
+        raise DomainError("Šiam bonusui grupinis pirkimas negalimas.")
 
     semester = get_active_semester()
     try:
@@ -292,6 +299,8 @@ def redeem_bonus(student_user: User, bonus: BonusItem) -> PointTransaction:
         raise DomainError("Neturite teisės išpirkti bonusų.")
     if not bonus.is_active:
         raise DomainError("Bonusas neaktyvus.")
+    if bonus.category == BonusItem.Category.POINTS_RELATED:
+        raise DomainError("Šiam bonusui reikalingas mokytojo patvirtinimas.")
 
     semester = get_active_semester()
 
@@ -317,6 +326,117 @@ def redeem_bonus(student_user: User, bonus: BonusItem) -> PointTransaction:
             message=f"Bonusas: {bonus.title_lt}",
             bonus_item=bonus,
         )
+        return tx
+
+
+def create_bonus_redemption_request(
+    student_user: User,
+    bonus: BonusItem,
+    requested_teacher_id: int | None,
+) -> BonusRedemptionRequest:
+    if student_user.role != User.Role.STUDENT:
+        raise DomainError("Neturite teisės teikti bonuso patvirtinimo prašymų.")
+    if not bonus.is_active:
+        raise DomainError("Bonusas neaktyvus.")
+    if bonus.category != BonusItem.Category.POINTS_RELATED:
+        raise DomainError("Šiam bonusui patvirtinimo prašymas nereikalingas.")
+    if not requested_teacher_id:
+        raise DomainError("Pasirinkite mokytoją bonuso patvirtinimui.")
+
+    semester = get_active_semester()
+
+    with transaction.atomic():
+        try:
+            student_profile = StudentProfile.objects.select_for_update().get(user=student_user)
+        except StudentProfile.DoesNotExist as exc:
+            raise DomainError("Mokinio profilis nerastas.") from exc
+
+        requested_teacher = bonus.assigned_teachers.filter(pk=requested_teacher_id).first()
+        if not requested_teacher:
+            raise DomainError("Pasirinktas mokytojas negali patvirtinti šio bonuso.")
+
+        pending_exists = BonusRedemptionRequest.objects.filter(
+            semester=semester,
+            bonus_item=bonus,
+            student_profile=student_profile,
+            status=BonusRedemptionRequest.Status.PENDING,
+        ).exists()
+        if pending_exists:
+            raise DomainError("Jau yra nepatvirtintas šio bonuso prašymas.")
+
+        used = bonus_used_count(student_profile, semester, bonus)
+        if used >= bonus.max_uses_per_student:
+            raise DomainError("Pasiektas bonuso panaudojimų limitas.")
+
+        balance = student_balance_points(student_profile, semester)
+        reserved_total = student_reserved_points(student_profile, semester)
+        available = balance - reserved_total
+        if available < bonus.price_points:
+            raise DomainError("Nepakanka laisvų taškų šiam bonusui.")
+
+        return BonusRedemptionRequest.objects.create(
+            semester=semester,
+            bonus_item=bonus,
+            student_profile=student_profile,
+            requested_teacher=requested_teacher,
+        )
+
+
+def confirm_bonus_redemption_request(teacher_user: User, bonus_request: BonusRedemptionRequest) -> PointTransaction:
+    if teacher_user.role != User.Role.TEACHER:
+        raise DomainError("Neturite teisės tvirtinti bonusų prašymų.")
+
+    with transaction.atomic():
+        try:
+            teacher_profile = TeacherProfile.objects.select_for_update().get(user=teacher_user)
+        except TeacherProfile.DoesNotExist as exc:
+            raise DomainError("Mokytojo profilis nerastas.") from exc
+
+        bonus_request = (
+            BonusRedemptionRequest.objects.select_for_update()
+            .select_related("bonus_item", "student_profile", "semester")
+            .get(pk=bonus_request.pk)
+        )
+
+        if bonus_request.status != BonusRedemptionRequest.Status.PENDING:
+            raise DomainError("Šis prašymas jau apdorotas.")
+        if bonus_request.requested_teacher_id != teacher_profile.id:
+            raise DomainError("Neturite teisės tvirtinti šio prašymo.")
+
+        bonus = bonus_request.bonus_item
+        if bonus.category != BonusItem.Category.POINTS_RELATED:
+            raise DomainError("Šiam bonusui patvirtinimo prašymai netaikomi.")
+        if not bonus.is_active:
+            raise DomainError("Bonusas neaktyvus.")
+
+        semester = bonus_request.semester
+        student_profile = StudentProfile.objects.select_for_update().get(pk=bonus_request.student_profile_id)
+
+        used = bonus_used_count(student_profile, semester, bonus)
+        if used >= bonus.max_uses_per_student:
+            raise DomainError("Pasiektas bonuso panaudojimų limitas.")
+
+        balance = student_balance_points(student_profile, semester)
+        reserved_total = student_reserved_points(student_profile, semester)
+        available = balance - reserved_total
+        if available < bonus.price_points:
+            raise DomainError("Mokiniui nepakanka laisvų taškų šiam bonusui.")
+
+        tx = PointTransaction.objects.create(
+            semester=semester,
+            student_profile=student_profile,
+            created_by=teacher_user,
+            tx_type=PointTransaction.TxType.REDEEM,
+            points_delta=-bonus.price_points,
+            message=f"Bonusas: {bonus.title_lt}",
+            bonus_item=bonus,
+        )
+
+        bonus_request.status = BonusRedemptionRequest.Status.APPROVED
+        bonus_request.decided_at = timezone.now()
+        bonus_request.decided_by = teacher_user
+        bonus_request.save(update_fields=["status", "decided_at", "decided_by"])
+
         return tx
 
 

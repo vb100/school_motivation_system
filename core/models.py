@@ -42,6 +42,7 @@ class Semester(models.Model):
 class SchoolSettings(models.Model):
     name = models.CharField(max_length=200, default="Mokyklos pavadinimas")
     logo = models.ImageField(upload_to="school_logos/", blank=True)
+    login_background = models.ImageField(upload_to="school_backgrounds/", blank=True)
 
     def __str__(self) -> str:
         return self.name
@@ -101,14 +102,77 @@ class TeacherBudget(models.Model):
 
 
 class BonusItem(models.Model):
+    class Category(models.TextChoices):
+        POINTS_RELATED = "POINTS_RELATED", "Pirkiniai susiję su balais"
+        OTHER = "OTHER", "Kiti pirkiniai"
+
     title_lt = models.CharField(max_length=200)
     description_lt = models.TextField()
     price_points = models.PositiveIntegerField()
     max_uses_per_student = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True)
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        default=Category.OTHER,
+    )
+    assigned_teachers = models.ManyToManyField(
+        TeacherProfile,
+        blank=True,
+        related_name="assigned_bonus_items",
+    )
+
+    class Meta:
+        verbose_name = "Pointify.lt pasiūlymas"
+        verbose_name_plural = "Pointify.lt pasiūlymai"
 
     def __str__(self) -> str:
         return self.title_lt
+
+
+class BonusRedemptionRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "PENDING"
+        APPROVED = "APPROVED", "APPROVED"
+        DECLINED = "DECLINED", "DECLINED"
+
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name="bonus_redemption_requests")
+    bonus_item = models.ForeignKey(BonusItem, on_delete=models.CASCADE, related_name="redemption_requests")
+    student_profile = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name="bonus_redemption_requests",
+    )
+    requested_teacher = models.ForeignKey(
+        TeacherProfile,
+        on_delete=models.CASCADE,
+        related_name="bonus_redemption_requests",
+    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="decided_bonus_redemption_requests",
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["requested_teacher", "status", "created_at"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["semester", "bonus_item", "student_profile"],
+                condition=Q(status="PENDING"),
+                name="unique_pending_bonus_redemption_request",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.student_profile} -> {self.bonus_item} ({self.status})"
 
 
 class PointTransaction(models.Model):

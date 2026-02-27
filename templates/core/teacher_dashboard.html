@@ -66,6 +66,45 @@
     </div>
 </div>
 
+<div class="card shadow-sm border-0 mb-4 bg-light-subtle">
+    <div class="card-body">
+        <h5 class="card-title d-flex align-items-center gap-2 fs-5">🔔 Bonusų patvirtinimo prašymai</h5>
+        {% if pending_bonus_requests %}
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mokinys</th>
+                            <th>Bonusas</th>
+                            <th>Semestras</th>
+                            <th>Pateikta</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bonus_request in pending_bonus_requests %}
+                            <tr>
+                                <td>{{ bonus_request.student_profile.display_name }}</td>
+                                <td>{{ bonus_request.bonus_item.title_lt }}</td>
+                                <td>{{ bonus_request.semester.name }}</td>
+                                <td>{{ bonus_request.created_at|date:"Y-m-d H:i" }}</td>
+                                <td class="text-end">
+                                    <form method="post" action="{% url 'teacher_confirm_bonus_request' bonus_request.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Patvirtinti</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-muted">Nėra naujų bonusų patvirtinimo prašymų.</div>
+        {% endif %}
+    </div>
+</div>
+
 {{ bonuses_payload|json_script:"bonus-items-data" }}
 <script>
     (function () {
@@ -122,9 +161,32 @@
     <div class="card-body">
         <h5 class="card-title d-flex align-items-center gap-2 fs-5">👥 Mokiniai</h5>
         <form method="get" class="mb-3">
-            <div class="input-group">
-                <input type="text" class="form-control" name="q" placeholder="Ieškoti pagal vardą ar klasę" value="{{ query }}">
-                <button class="btn btn-outline-primary" type="submit">Ieškoti</button>
+            <div class="row g-2 align-items-end">
+                <div class="col-lg-7">
+                    <label for="student-search-name" class="form-label mb-1">Ieškoti pagal vardą ar pavardę</label>
+                    <input
+                        id="student-search-name"
+                        type="text"
+                        class="form-control"
+                        name="q"
+                        placeholder="Ieškoti pagal vardą ar pavardę"
+                        value="{{ query }}"
+                    >
+                </div>
+                <div class="col-lg-3">
+                    <label for="student-search-class" class="form-label mb-1">Ieškoti pagal klasę</label>
+                    <select id="student-search-class" name="class_name" class="form-select">
+                        <option value="">Visos klasės</option>
+                        {% for class_option in class_options %}
+                            <option value="{{ class_option }}" {% if selected_class == class_option %}selected{% endif %}>
+                                {{ class_option }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <button class="btn btn-outline-primary w-100" type="submit">Ieškoti</button>
+                </div>
             </div>
         </form>
         <div class="table-responsive">

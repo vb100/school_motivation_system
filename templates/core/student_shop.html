@@ -18,53 +18,89 @@
                     <h5 class="card-title">{{ item.bonus.title_lt }}</h5>
                     <p class="card-text">{{ item.bonus.description_lt }}</p>
                     <p class="card-text">Kaina: {{ item.bonus.price_points }} t.</p>
-                    {% if item.group_reserved_total %}
+                    {% if item.group_reserved_total and not item.requires_teacher_confirmation %}
                         <p class="card-text text-success fw-semibold">Liko mokėti: {{ item.group_remaining }} t.</p>
                     {% endif %}
                     <p class="card-text">Likę panaudojimai: {{ item.remaining_uses }}</p>
-                    <form method="post" action="{% url 'student_redeem' item.bonus.id %}">
-                        {% csrf_token %}
-                        <button class="btn btn-primary" type="submit" {% if not item.can_redeem %}disabled{% endif %}>
-                            Išpirkti bonusą
-                        </button>
-                    </form>
+                    {% if item.requires_teacher_confirmation %}
+                        {% if item.pending_request %}
+                            <div class="alert alert-warning py-2">
+                                Laukiama mokytojo ({{ item.pending_request.requested_teacher.display_name }}) patvirtinimo.
+                            </div>
+                        {% endif %}
+                        <form method="post" action="{% url 'student_redeem' item.bonus.id %}" class="row g-2 align-items-end">
+                            {% csrf_token %}
+                            <div class="col-12">
+                                <label class="form-label mb-1">Mokytojas patvirtinimui</label>
+                                <select name="teacher_id" class="form-select" {% if not item.can_request_confirmation %}disabled{% endif %}>
+                                    <option value="">Pasirinkite mokytoją</option>
+                                    {% for teacher in item.assigned_teachers %}
+                                        <option value="{{ teacher.id }}">{{ teacher.display_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <button class="btn btn-primary" type="submit" {% if not item.can_request_confirmation %}disabled{% endif %}>
+                                    Išsiųsti prašymą patvirtinimui
+                                </button>
+                            </div>
+                        </form>
+                        {% if not item.assigned_teachers %}
+                            <div class="small text-danger mt-2">
+                                Šiam bonusui dar nepriskirtas nė vienas mokytojas.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <form method="post" action="{% url 'student_redeem' item.bonus.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-primary" type="submit" {% if not item.can_redeem %}disabled{% endif %}>
+                                Išpirkti bonusą
+                            </button>
+                        </form>
+                    {% endif %}
                     <hr>
                     <div class="mb-2">
                         <strong>Grupinis pirkimas</strong>
                     </div>
-                    <div class="small text-muted mb-2">
-                        Rezervuota iš viso: {{ item.group_reserved_total }} t.
-                        {% if item.group_my_amount %}
-                            (Jūs: {{ item.group_my_amount }} t.)
-                        {% endif %}
-                    </div>
-                    {% if item.group_purchase and item.group_purchase.status == "AWAITING_CONFIRMATION" %}
-                        <div class="alert alert-warning py-2 mb-2">
-                            Reikalingas visų dalyvių patvirtinimas.
+                    {% if item.requires_teacher_confirmation %}
+                        <div class="small text-muted">
+                            Šiam bonusui grupinis pirkimas negalimas.
                         </div>
-                        {% if item.group_my_amount and not item.group_my_confirmed %}
-                            <form method="post" action="{% url 'student_confirm_group_purchase' item.bonus.id %}">
-                                {% csrf_token %}
-                                <button class="btn btn-outline-primary btn-sm" type="submit">Patvirtinti pirkimą</button>
-                            </form>
-                        {% elif item.group_my_confirmed %}
-                            <div class="small text-success">Jūs jau patvirtinote.</div>
-                        {% endif %}
                     {% else %}
-                        <form method="post" action="{% url 'student_reserve_points' item.bonus.id %}" class="row g-2 align-items-center">
-                            {% csrf_token %}
-                            <div class="col-auto">
-                                <input type="number" min="1" name="reserve_amount" class="form-control form-control-sm" placeholder="Taškai">
+                        <div class="small text-muted mb-2">
+                            Rezervuota iš viso: {{ item.group_reserved_total }} t.
+                            {% if item.group_my_amount %}
+                                (Jūs: {{ item.group_my_amount }} t.)
+                            {% endif %}
+                        </div>
+                        {% if item.group_purchase and item.group_purchase.status == "AWAITING_CONFIRMATION" %}
+                            <div class="alert alert-warning py-2 mb-2">
+                                Reikalingas visų dalyvių patvirtinimas.
                             </div>
-                            <div class="col-auto">
-                                <button class="btn btn-outline-primary btn-sm" type="submit">Rezervuoti taškus</button>
-                            </div>
-                        </form>
-                        {% if item.group_can_withdraw %}
-                            <form method="post" action="{% url 'student_withdraw_reservation' item.bonus.id %}" class="mt-2">
+                            {% if item.group_my_amount and not item.group_my_confirmed %}
+                                <form method="post" action="{% url 'student_confirm_group_purchase' item.bonus.id %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-outline-primary btn-sm" type="submit">Patvirtinti pirkimą</button>
+                                </form>
+                            {% elif item.group_my_confirmed %}
+                                <div class="small text-success">Jūs jau patvirtinote.</div>
+                            {% endif %}
+                        {% else %}
+                            <form method="post" action="{% url 'student_reserve_points' item.bonus.id %}" class="row g-2 align-items-center">
                                 {% csrf_token %}
-                                <button class="btn btn-outline-danger btn-sm" type="submit">Atšaukti rezervaciją</button>
+                                <div class="col-auto">
+                                    <input type="number" min="1" name="reserve_amount" class="form-control form-control-sm" placeholder="Taškai">
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-outline-primary btn-sm" type="submit">Rezervuoti taškus</button>
+                                </div>
                             </form>
+                            {% if item.group_can_withdraw %}
+                                <form method="post" action="{% url 'student_withdraw_reservation' item.bonus.id %}" class="mt-2">
+                                    {% csrf_token %}
+                                    <button class="btn btn-outline-danger btn-sm" type="submit">Atšaukti rezervaciją</button>
+                                </form>
+                            {% endif %}
                         {% endif %}
                     {% endif %}
                 </div>
