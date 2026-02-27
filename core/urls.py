@@ -7,6 +7,7 @@ from .views import (
     teacher_dashboard,
     teacher_award,
     teacher_ranking,
+    teacher_guidelines,
     teacher_confirm_bonus_request,
     student_dashboard,
     student_shop,
@@ -23,6 +24,7 @@ urlpatterns = [
     path("teacher/", teacher_dashboard, name="teacher_dashboard"),
     path("teacher/award/<int:student_id>/", teacher_award, name="teacher_award"),
     path("teacher/ranking/", teacher_ranking, name="teacher_ranking"),
+    path("teacher/guidelines/", teacher_guidelines, name="teacher_guidelines"),
     path(
         "teacher/bonus-request/<int:request_id>/confirm/",
         teacher_confirm_bonus_request,

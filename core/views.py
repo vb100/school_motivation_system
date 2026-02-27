@@ -203,6 +203,17 @@ def teacher_ranking(request: HttpRequest) -> HttpResponse:
     return render(request, "core/teacher_ranking.html", {"top_five": top_five, "semester": semester})
 
 
+@require_role([User.Role.TEACHER])
+def teacher_guidelines(request: HttpRequest) -> HttpResponse:
+    school_settings = get_school_settings()
+    school_logo_url = school_settings.logo.url if school_settings and school_settings.logo else ""
+    context = {
+        "school_name": get_school_name(),
+        "school_logo_url": school_logo_url,
+    }
+    return render(request, "core/teacher_guidelines.html", context)
+
+
 @require_role([User.Role.STUDENT])
 def student_dashboard(request: HttpRequest) -> HttpResponse:
     school_settings = get_school_settings()

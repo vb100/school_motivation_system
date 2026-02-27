@@ -13,7 +13,10 @@
             <h1 class="h2 fw-semibold mb-0">Mokytojo skydelis</h1>
         </div>
     </div>
-    <a class="btn btn-primary" href="{% url 'teacher_ranking' %}">🏆 Top 5 reitingas</a>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-danger" href="{% url 'teacher_guidelines' %}">Taškų skyrimo gairės</a>
+        <a class="btn btn-primary" href="{% url 'teacher_ranking' %}">🏆 Top 5 reitingas</a>
+    </div>
 </div>
 
 <div class="row mb-4">

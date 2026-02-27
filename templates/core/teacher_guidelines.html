@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Taškų skyrimo gairės{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-3">
+        {% if school_logo_url %}
+            <img src="{{ school_logo_url }}" alt="Mokyklos logotipas" class="img-fluid" style="max-height: 48px;">
+        {% endif %}
+        <div>
+            <div class="text-uppercase small text-muted fw-semibold">{{ school_name }}</div>
+            <h1 class="h3 fw-semibold mb-0">Taškų skyrimo gairės</h1>
+        </div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'teacher_dashboard' %}">Atgal į skydelį</a>
+</div>
+
+<div class="card shadow-sm border-0 bg-light-subtle">
+    <div class="card-body">
+        <p class="mb-3">
+            Šis puslapis padeda vieningai ir sąžiningai skirti Pointify.lt taškus. Žemiau pateikti pavyzdiniai
+            orientyrai, kuriuos rekomenduojama taikyti visoms klasėms.
+        </p>
+
+        <h2 class="h5">Rekomenduojama taškų skalė</h2>
+        <ul>
+            <li>5-15 t. - už kasdienį pastangų demonstravimą ir gerą elgesį pamokoje.</li>
+            <li>20-40 t. - už kokybiškai atliktą savarankišką darbą arba papildomą iniciatyvą.</li>
+            <li>50-80 t. - už reikšmingą akademinį progresą, pagalbą komandai ar klasės veikloje.</li>
+            <li>100+ t. - tik išimtiniais atvejais, kai pasiekimas yra aiškiai išskirtinis.</li>
+        </ul>
+
+        <h2 class="h5 mt-4">Trumpi principai</h2>
+        <ul>
+            <li>Skirkite taškus už konkretų veiksmą, o ne bendrą įspūdį.</li>
+            <li>Žinutėje parašykite aiškią priežastį, kad mokinys suprastų, už ką buvo įvertintas.</li>
+            <li>Venkite labai didelių taškų šuolių be aiškaus pagrindo.</li>
+            <li>Jei kyla abejonių, laikykitės nuosaikesnio vertinimo ir aptarkite su administracija.</li>
+        </ul>
+
+        <p class="text-muted mb-0">
+            Pastaba: tai pavyzdinės gairės demonstracinei aplinkai. Galutinė taškų politika nustatoma mokyklos administracijos.
+        </p>
+    </div>
+</div>
+{% endblock %}
