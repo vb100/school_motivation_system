@@ -74,7 +74,8 @@
 
 <div class="card shadow-sm border-0 mb-4 bg-light-subtle">
     <div class="card-body">
-        <h5 class="card-title d-flex align-items-center gap-2 fs-5">🔔 Bonusų patvirtinimo prašymai</h5>
+        <h5 class="card-title d-flex align-items-center gap-2 fs-5">🔔 Mokinių prašymai patvirtinti papildomus balus
+        </h5>
         {% if pending_bonus_requests %}
         <div class="table-responsive">
             <table class="table table-striped align-middle mb-0">
@@ -178,7 +179,7 @@
                     <select id="student-search-class" name="class_name" class="form-select">
                         <option value="">Visos klasės</option>
                         {% for class_option in class_options %}
-                        <option value="{{ class_option }}" {% if selected_class == class_option %}selected{% endif %}>
+                        <option value="{{ class_option }}" {% if selected_class==class_option %}selected{% endif %}>
                             {{ class_option }}
                         </option>
                         {% endfor %}
@@ -215,9 +216,9 @@
             </table>
         </div>
         {% if students_truncated %}
-            <p class="text-center text-secondary small mb-0 mt-3">
-                Rodomi 15 mokinių vardai. Norint skirti Pointify.lt taškus, naudokitės mokinių paieška.
-            </p>
+        <p class="text-center text-secondary small mb-0 mt-3">
+            Rodomi 15 mokinių vardai. Norint skirti Pointify.lt taškus, naudokitės mokinių paieška.
+        </p>
         {% endif %}
     </div>
 </div>
