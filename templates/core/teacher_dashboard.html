@@ -179,7 +179,7 @@
                     <select id="student-search-class" name="class_name" class="form-select">
                         <option value="">Visos klasės</option>
                         {% for class_option in class_options %}
-                        <option value="{{ class_option }}" {% if selected_class==class_option %}selected{% endif %}>
+                        <option value="{{ class_option }}" {% if selected_class == class_option %}selected{% endif %}>
                             {{ class_option }}
                         </option>
                         {% endfor %}
